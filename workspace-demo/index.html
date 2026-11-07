@@ -169,6 +169,11 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .leaflet-container{font-family:inherit}
 a{color:var(--accent)}
 @media (max-width:640px){header.top{padding:8px 12px;gap:8px}.search{order:3;max-width:none;flex-basis:100%}.role{margin-left:0}.brand .sub{display:none}#view{padding:14px 12px 40px}}
+.syncst{font-size:12px;color:var(--mute);background:var(--chip);padding:3px 11px;border-radius:99px;white-space:nowrap;margin-left:auto}
+.syncst.ok{color:var(--ok-ink);background:var(--ok-bg)}
+.syncst.bad{color:var(--warn-ink);background:var(--warn-bg)}
+.userchip{font-size:12.5px;background:var(--accent-soft);color:var(--accent);padding:4px 12px;border-radius:99px;font-weight:600;white-space:nowrap}
+code{background:var(--chip);padding:1px 6px;border-radius:6px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -176,7 +181,10 @@ a{color:var(--accent)}
 <header class="top">
   <div class="brand"><span class="logo">🧭</span><div><h1>ศูนย์รวมวิถีชุมชน</h1><div class="sub">เขต 8 บึงสวาง · ต้นแบบ 3.2 · ข้อมูลสมมติ ยังไม่ต่อชีต/Drive</div></div></div>
   <div class="search"><span class="si">🔍</span><input id="gq" type="search" autocomplete="off" placeholder="ค้นหาทุกอย่าง เช่น 21, สมศรี, น้ำท่วม"><kbd>/</kbd><div id="sres" class="sres"></div></div>
-  <div class="role" title="ของจริงใช้รหัสส่วนตัว สลับตรงนี้เพื่อดูว่าแต่ละบทบาททำอะไรได้">
+  <div id="syncSt" class="syncst" style="display:none"></div>
+  <div id="userChip" class="userchip" style="display:none"></div>
+  <button id="cfgBtn" class="x" title="เชื่อมต่อ / ตั้งค่า">⚙️</button>
+  <div class="role" id="roleBox" title="ของจริงใช้รหัสส่วนตัว สลับตรงนี้เพื่อดูว่าแต่ละบทบาททำอะไรได้">
     <b>ดูในบทบาท</b>
     <select id="roleSel"><option value="admin">ผู้ดูแล (หัวหน้าเขต)</option><option value="lead">หัวหน้าวิถี</option><option value="member">สมาชิก</option><option value="viewer">ผู้ชม</option></select>
     <select id="leadSel"></select>
@@ -197,7 +205,12 @@ var WC=[null,'#2f8fe0','#b0408f','#1b7f5a','#c97a12','#d03b4f','#7a5bb5'];
 var METHODS=['สัมภาษณ์เชิงลึก','สนทนากลุ่ม (FGD)','สังเกตแบบมีส่วนร่วม','ข้อมูลทุติยภูมิ','อื่นๆ'];
 var STAT={new:'ใหม่',checked:'ตรวจแล้ว',pick:'เลือกเก็บไว้ใช้',skip:'ไม่ใช้'};
 var STORD=['new','checked','pick','skip'];
-var KEY='commed_proto3_v4';
+/* โหมดตัวอย่าง (ข้อมูลสมมติในเครื่อง) หรือโหมดเชื่อมต่อ (เก็บใน Google Sheet/Drive ของทีม) — โหมดเชื่อมต่อเริ่มเมื่อบันทึกที่อยู่เซิร์ฟเวอร์+รหัสไว้ในเครื่อง */
+var CFG=(function(){try{return JSON.parse(localStorage.getItem('commed_ws_cfg')||'null')}catch(e){return null}})();
+var SYNC_ON=!!(CFG&&CFG.api&&CFG.code)&&!/[?&]demo=1/.test(location.search);
+var KEY=SYNC_ON?'commed_ws_data':'commed_proto3_v4';
+var SY={since:0,snap:{},rev:{},busy:false,state:'',lastOk:0,err:'',t:null};
+var USER=SYNC_ON?(CFG.user||{name:'ผู้ใช้',role:'viewer',wi:0}):null;
 var TOTAL=224; // จำนวนหลังคาเรือนตามคู่มือ (ยังไม่ยืนยันกับ รพ.สต.)
 var FK={ // ชนิดของจุดบนแผนที่เดินดิน
  house:{t:'บ้าน',geom:'point'},
@@ -223,10 +236,11 @@ function now(){var d=new Date();return d.toLocaleDateString('th-TH')+' '+d.toLoc
 function today(){return new Date().toLocaleDateString('th-TH')}
 function uid(p){return p+Math.random().toString(36).slice(2,8)}
 function toast(t,undo){var e=$('toast');e.textContent=t;if(undo){var b=document.createElement('button');b.textContent='เลิกทำ';b.style.marginLeft='10px';b.onclick=function(){e.style.display='none';undo()};e.appendChild(b)}e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},undo?8000:3400)}
-function save(){try{localStorage.setItem(KEY,JSON.stringify({notes:notes,snips:snips,feats:feats,people:people}))}catch(e){toast('บันทึกลงเครื่องไม่ได้ (พื้นที่เต็ม) ลองลดจำนวนรูป')}}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({notes:notes,snips:snips,feats:feats,people:people,sy:SYNC_ON?{since:SY.since,snap:SY.snap,rev:SY.rev}:undefined}))}catch(e){toast('บันทึกลงเครื่องไม่ได้ (พื้นที่เต็ม) ลองลดจำนวนรูป')}}
+function save(){persist();if(SYNC_ON)scheduleSync()}
 function noteOf(s){return notes.filter(function(n){return n.id===s.noteId})[0]||{by:'',method:'',informant:'',date:'',photos:[],text:'',title:''}}
 function snipOf(id){return snips.filter(function(s){return s.id===id})[0]}
-function me(){return st.role==='admin'?'หัวหน้าเขต (ตัวอย่าง)':st.role==='lead'?'หัวหน้าวิถี '+st.lead:st.role==='member'?'สมาชิก ก.':'ผู้ชม'}
+function me(){if(SYNC_ON)return USER.name;return st.role==='admin'?'หัวหน้าเขต (ตัวอย่าง)':st.role==='lead'?'หัวหน้าวิถี '+st.lead:st.role==='member'?'สมาชิก ก.':'ผู้ชม'}
 function has(s,w){return s.wi.indexOf(w)>=0}
 function stOf(s,w){return (s.st&&s.st[w])||'new'}
 function canTag(){return st.role!=='viewer'}
@@ -279,7 +293,7 @@ function seed(){
  var P1=mkP('ป้าสมศรี ใจงาม','ส.','',HN[3],'ชื่อสมมติ ตัวอย่าง'),P2=mkP('ลุงบุญมี ทองดี','','หมอบุญ',HN[1],'ชื่อสมมติ ตัวอย่าง (ยังไม่ตั้งตัวย่อ ไว้ดูคำเตือน)'),P3=mkP('ผู้ใหญ่สมชาย รักถิ่น','ผู้ใหญ่บ้าน','',HN[2],'ชื่อสมมติ ตัวอย่าง');
  var h3=feats.filter(function(f){return f.kind==='house'&&f.no===HN[3]})[0];S(E,0).pids=[P1.id];if(h3)S(E,0).fids=[h3.id];
 }
-try{var sv=JSON.parse(localStorage.getItem(KEY)||'null');if(sv&&sv.notes&&sv.snips){notes=sv.notes;snips=sv.snips;feats=sv.feats||[];people=sv.people||[]}else seed()}catch(e){seed()}
+try{var sv=JSON.parse(localStorage.getItem(KEY)||'null');if(sv&&sv.notes&&sv.snips){notes=sv.notes;snips=sv.snips;feats=sv.feats||[];people=sv.people||[];if(SYNC_ON&&sv.sy){SY.since=sv.sy.since||0;SY.snap=sv.sy.snap||{};SY.rev=sv.sy.rev||{}}}else if(!SYNC_ON)seed()}catch(e){if(!SYNC_ON)seed()}
 (function(){var q=location.search,m;if(m=q.match(/role=(\w+)/))st.role=m[1];if(m=q.match(/wi=(\d)/)){st.lead=+m[1];st.tw=+m[1];st.ow=+m[1]}if(m=q.match(/view=(\w+)/))st.view=m[1];if(m=q.match(/ow=(\d)/))st.ow=+m[1];if(m=q.match(/tw=(\d)/))st.tw=+m[1]})();
 
 // ============ นำทาง ============
@@ -377,7 +391,7 @@ function openSnip(id){
  h+='<div class="bar">'+(canTag()?'<button class="primary" data-m="save">บันทึก</button><button data-m="flag">'+(s.flag?'ยกเลิกธงขัดกัน':'ติดธง “ขัดกัน/ต้องตรวจ”')+'</button><button data-m="pin">'+(s.loc?'📍 ย้ายตำแหน่งบนแผนที่':'📍 ปักตำแหน่งบนแผนที่')+'</button>':'')+'</div>';
  if((s.hist||[]).length)h+='<h3>ประวัติ</h3><div class="muted">'+s.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
  h+='<h3>ที่มา</h3><div class="muted">'+esc(n.method)+' · ผู้ให้ข้อมูล: '+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.date)+' · บันทึกโดย '+esc(n.by)+' ('+esc(n.at)+')'+(n.docs?' · ต้นฉบับ: '+esc(n.docs):'')+'</div>';
- if(n.photos.length)h+='<div class="ph">'+n.photos.map(function(p){return '<img src="'+p+'" alt="รูป">'}).join('')+'</div>';
+ if(n.photos.length)h+='<div class="ph">'+n.photos.map(imgTag).join('')+'</div>';
  h+='<h3>ต้นฉบับทั้งโน้ต'+(n.title?' · '+esc(n.title):'')+'</h3><div class="muted">ลากคลุมข้อความด้านล่างแล้วกดปุ่มเพื่อตัดเป็นข้อมูลย่อยใหม่ (ข้อมูลใหม่จะขึ้น “ยังไม่ระบุวิถี” ให้ติดป้ายเอง)</div>';
  var raw=esc(n.text);if(s.text&&n.text.indexOf(s.text)>=0)raw=esc(n.text).replace(esc(s.text),'<mark>'+esc(s.text)+'</mark>');
  h+='<div class="raw" id="rawTxt" style="margin-top:6px">'+raw+'</div>';
@@ -460,7 +474,7 @@ function viewPicks(){
  h+='<div class="stats"><div class="stat"><b>'+list.length+'</b>เลือกเก็บไว้</div><div class="stat"><b>'+snips.filter(function(s){return has(s,w)}).length+'</b>ทั้งหมดของวิถีนี้</div></div>';
  if(na.length)h+='<div class="warnbox">⚠️ มีชื่อ '+na.map(function(p){return '“'+esc(p.name)+'”'}).join(', ')+' อยู่ในรายการที่เลือก แต่ยังไม่ตั้งตัวย่อ ตอนส่งออกระบบจะแทนด้วย “[ยังไม่ตั้งตัวย่อ]” ไปตั้งตัวย่อได้ที่หน้า “บุคคล”</div>';
  h+='<div class="warnbox soft">ตอนคัดลอก/ดาวน์โหลด ระบบแทนชื่อบุคคลที่อยู่ในหน้า “บุคคล” ด้วยตัวย่อให้ ชื่อที่ไม่ได้อยู่ในหน้านั้นระบบตรวจไม่เจอ และไม่ปิดเลขที่บ้าน ควรอ่านทวนก่อนใส่รูปเล่ม</div>';
- h+='<div class="bar"><label style="font-size:13px"><input type="checkbox" id="pkMask"'+(st.mask?' checked':'')+'> แสดงแบบปิดชื่อ (แบบเดียวกับที่ส่งออก)</label><span class="grow"></span><button data-a="copy">คัดลอกทั้งหมด</button><button data-a="dl">ดาวน์โหลด .txt</button><button data-a="reset" class="danger">รีเซ็ตข้อมูลตัวอย่าง</button></div>';
+ h+='<div class="bar"><label style="font-size:13px"><input type="checkbox" id="pkMask"'+(st.mask?' checked':'')+'> แสดงแบบปิดชื่อ (แบบเดียวกับที่ส่งออก)</label><span class="grow"></span><button data-a="copy">คัดลอกทั้งหมด</button><button data-a="dl">ดาวน์โหลด .txt</button>'+(SYNC_ON?'':'<button data-a="reset" class="danger">รีเซ็ตข้อมูลตัวอย่าง</button>')+'</div>';
  h+=list.length?list.map(function(s){var n=noteOf(s);var tx=st.mask?maskText(s.text):s.text;return '<div class="card" data-open="'+s.id+'" style="--stripe:'+stripe(s)+'"><div class="txt" style="-webkit-line-clamp:unset">'+esc(tx)+(s.reportName?'  [ใช้ในรายงานว่า: '+esc(s.reportName)+']':'')+'</div><div class="chips">'+(s.wi.length>1?'<span class="muted">ติดป้ายร่วมกับ</span>'+tagChips(s,w):'')+'</div><small style="display:block;margin-top:4px">'+esc(n.method)+' · '+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.date)+' · '+esc(n.by)+'</small>'+(canTriageW(w)?'<div class="bar" style="margin:6px 0 0"><button data-a="back" data-w="'+w+'" data-id="'+s.id+'">เอากลับไปที่ถาด</button></div>':'')+'</div>'}).join(''):'<div class="empty"><span class="em">⭐</span>ยังไม่มีรายการที่เลือกเก็บไว้<br>ไปเลือกที่หน้า “ถาดหัวหน้าวิถี”</div>';
  h+='<div class="muted" style="margin-top:10px">ตัวเลขเชิงปริมาณจากแบบสอบถามที่ต้องใช้คู่กัน ต้นแบบนี้ยังไม่ดึงมาแสดง</div></div>';
  $('view').innerHTML=h;$('pkMask').onchange=function(){st.mask=this.checked;viewPicks()}}
@@ -557,7 +571,8 @@ function mapStats(){
  var h='<div class="tile" style="min-width:190px"><b>'+hs.length+' / '+TOTAL+'</b>บ้านที่ปักหมุดแล้ว ('+pct.toFixed(1)+'%)<div class="meter"><i style="width:'+pct+'%"></i></div><div class="muted">224 = ตามคู่มือ ยังไม่ยืนยัน</div></div>';
  h+=Object.keys(HS).map(function(k){return '<div class="tile"><b>'+c[k]+'</b><span class="dot" style="background:'+HS[k].c+'"></span>'+HS[k].t+'</div>'}).join('');
  h+='<div class="tile"><b>'+iv+'</b>ติ๊กสัมภาษณ์แล้ว</div><div class="tile"><b>'+others+'</b>สถานที่/จุดอื่น</div><div class="tile"><b'+(dup?' style="color:var(--bad)"':'')+'>'+dup+'</b>เลขที่ซ้ำ</div><div class="tile" style="min-width:200px"><b style="font-size:13px">ผู้ร่วมปักหมุด</b><span class="muted">'+(top||'—')+'</span></div>';
- $('mapStats').innerHTML=h}
+ if(svOn())h+='<div class="tile" id="svTile" style="min-width:150px"><b>…</b>แบบสอบถามจริง</div>';
+ $('mapStats').innerHTML=h;svTile()}
 
 // ---- แผงด้านข้าง 3 แท็บ ----
 function mapSide(){
@@ -573,6 +588,7 @@ function layersTab(){
   var q=st.quick||(st.quick={on:false,no:'',status:'ok'});
   h+='<div class="tile" style="margin-top:10px;width:100%"><b style="font-size:14px">โหมดปักบ้านต่อเนื่อง</b><div class="muted">ใส่เลขที่บ้านแล้วแตะหลังคาบ้านหลังนั้น เลขที่ถัดไปขึ้นให้เอง ปักต่อได้เรื่อยๆ</div><div class="row2"><input id="qNo" placeholder="เลขที่บ้าน" value="'+esc(q.no)+'" style="width:110px"><select id="qSt" style="flex:1">'+Object.keys(HS).map(function(k){return '<option value="'+k+'"'+(q.status===k?' selected':'')+'>'+HS[k].t+'</option>'}).join('')+'</select></div><div class="bar" style="margin:6px 0 0">'+(q.on?'<button data-fa="qstop">หยุดปัก</button><span class="pill ok">กำลังปัก · เลขที่ '+esc(q.no||'(ว่าง)')+'</span>':'<button class="primary" data-fa="qstart">เริ่มปักต่อเนื่อง</button>')+'</div></div>'}
  else h+='<div class="warnbox">ผู้ชมดูได้อย่างเดียว</div>';
+ if(svOn()&&canTag())h+='<div class="tile" style="margin-top:10px;width:100%"><b style="font-size:14px">ตรวจสถานะสัมภาษณ์จากแบบสอบถาม</b><div class="muted">เรียกแบบสอบถามทีละหลัง (อ่านอย่างเดียว) ใช้เวลาหลายนาทีถ้ามีบ้านเยอะ ตรวจแล้วติ๊กวงแหวนเขียวให้บ้านที่พบข้อมูลสัมภาษณ์</div><div class="bar" style="margin:6px 0 0"><button data-fa="svall">ตรวจทุกหลัง</button></div><div id="svProg" class="muted">'+esc(st.svsum||'')+'</div></div>';
  var cnt={};feats.forEach(function(f){if(!f.hidden)cnt[f.kind]=(cnt[f.kind]||0)+1});
  h+='<h3>ชั้นข้อมูล</h3>'+Object.keys(FK).map(function(k){var K=FK[k];var sw=k==='house'?'background:linear-gradient(90deg,#b5412d 25%,#8e5de0 25% 50%,#f2c01e 50% 75%,#9aa0a6 75%)':'background:'+K.c;return '<label class="kind"><input type="checkbox" data-fvis="'+k+'"'+(st.fvis[k]?' checked':'')+'><i class="sw" style="'+sw+'"></i>'+(K.i?K.i+' ':'')+K.t+'<span class="n">'+(cnt[k]||0)+'</span></label>'}).join('')+'<label class="kind"><input type="checkbox" data-fvis="notes"'+(st.fvis.notes?' checked':'')+'><i class="sw" style="background:#666"></i>📝 โน้ตที่มีตำแหน่ง<span class="n">'+snips.filter(function(s){return s.loc}).length+'</span></label>';
  h+='<div class="muted" style="margin-top:6px">วงแหวนเขียวที่บ้าน = ติ๊กว่าสัมภาษณ์แล้ว · ลากหมุดเพื่อย้ายได้ ทุกคนปักและแก้ไขได้ มีประวัติและกู้คืนได้</div>';
@@ -591,11 +607,12 @@ function detailTab(){
  else h+='<label class="l">ชื่อ</label><input class="f" id="fT" value="'+esc(f.title)+'"'+dis+'>';
  h+='<label class="l">รายละเอียดสั้นๆ</label><textarea class="f" id="fN" rows="3"'+dis+'>'+esc(f.note)+'</textarea><div class="muted">ข้อมูลยาวๆ ให้เขียนเป็นโน้ตในหน้า “ส่งข้อมูล” แล้วผูกกับจุดนี้ เพื่อให้หัวหน้าวิถีเห็นและคัดเลือกได้</div>';
  h+='<div class="bar">'+(ed?'<button class="primary" data-fa="fsave">บันทึก</button><button class="danger" data-fa="fhide">ซ่อนจุดนี้</button>':'')+'</div>';
- h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?'<div class="ph">'+f.photos.map(function(p){return '<img src="'+p+'" alt="รูป">'}).join('')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
+ h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?'<div class="ph">'+f.photos.map(imgTag).join('')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
  var ls=snips.filter(function(s){return (s.fids||[]).indexOf(f.id)>=0});
  var ment=snips.filter(function(s){return ls.indexOf(s)<0&&(f.kind==='house'?(f.no&&housesMentioned(s.text).indexOf(tnorm(f.no))>=0):placeHit(f,s.text))});
  var pp=f.kind==='house'&&f.no?pLive().filter(function(p){return tnorm(p.house)===tnorm(f.no)}):[];
  if(pp.length)h+='<h3>คนที่อยู่บ้านหลังนี้</h3><div class="chips">'+pp.map(function(p){return '<button data-pp="'+p.id+'">👤 '+esc(p.name)+'</button>'}).join('')+'</div>';
+ if(f.kind==='house'&&f.no&&svOn())h+='<h3>📋 แบบสอบถามจริง</h3><div id="svBox"><button data-fa="svchk">ตรวจว่าบ้านนี้สัมภาษณ์แล้วหรือยัง</button></div>';
  h+='<h3>โน้ตที่ผูกกับจุดนี้ ('+ls.length+')</h3>'+(ls.length?ls.map(function(s){return '<div class="item" style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,90))+'…</div>'}).join(''):'<div class="muted">ยังไม่มี · เปิดโน้ตในคลังกลางแล้วค้นหาจุดนี้เพื่อผูก</div>');
  if(ment.length)h+='<h3>💡 โน้ตที่พูดถึงจุดนี้ แต่ยังไม่ผูก ('+ment.length+')</h3>'+ment.map(function(s){return '<div class="item"><span style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,80))+'…</span>'+(ed?' <button data-fa="flink" data-sid="'+s.id+'">ผูก</button>':'')+'</div>'}).join('');
  h+='<h3>ประวัติการแก้ไข</h3><div class="muted">'+f.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
@@ -623,6 +640,14 @@ $('msBody').addEventListener('click',function(e){
  if(a==='add'){st.draw={kind:$('fKind').value};st.pts=[];if(st.quick)st.quick.on=false;tmp.clearLayers();drawMap();return}
  if(a==='qstart'){st.quick.on=true;st.quick.no=$('qNo').value.trim();st.quick.status=$('qSt').value;st.draw=null;drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}return}
  if(a==='flink'&&f){var fs2=snipOf(b.dataset.sid);if(fs2){addTo(fs2,'fids',f.id,featLabel(f));save();toast('ผูกโน้ตกับ '+featLabel(f)+' แล้ว');mapSide()}return}
+ if(a==='svchk'&&f){var bx=$('svBox');bx.textContent='กำลังตรวจ…';svHouse(f.no).then(function(r){if(!r.ok)throw new Error(r.error||'ไม่สำเร็จ');bx.innerHTML=r.sets.length?'<b>พบ '+r.sets.length+' ชุด</b>'+svRows(r.sets)+(f.iv?'<div class="muted">ติ๊กสัมภาษณ์แล้วอยู่แล้ว</div>':(canTag()?'<div class="bar"><button class="primary" data-fa="svtick">ติ๊ก “สัมภาษณ์แล้ว”</button></div>':'')):'<b>ยังไม่พบข้อมูลของบ้านเลขที่นี้ในแบบสอบถาม</b>'+(f.iv?'<div class="muted">แต่ติ๊กไว้ว่าสัมภาษณ์แล้ว ลองตรวจว่าพิมพ์เลขที่ตรงกันไหม</div>':'')}).catch(function(er){bx.textContent='ตรวจไม่ได้: '+er.message});return}
+ if(a==='svtick'&&f){f.iv=true;f.hist.push('ติ๊กสัมภาษณ์แล้วจากข้อมูลแบบสอบถาม · '+me()+' · '+now());save();toast('ติ๊กแล้ว');drawMap();return mapSide()}
+ if(a==='svall'){if(st.svrun)return;st.svrun=true;var hs=feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.no}),found=0,miss=0,sus=[],pg=$('svProg');
+  (async function(){try{for(var i=0;i<hs.length;i++){var h1=hs[i];pg.textContent='ตรวจ '+(i+1)+'/'+hs.length+' (บ้านเลขที่ '+h1.no+')…';var r=await svHouse(h1.no);if(!r.ok)throw new Error(r.error||'ไม่สำเร็จ');
+    if(r.sets.length){found++;if(!h1.iv){h1.iv=true;h1.hist.push('ติ๊กสัมภาษณ์แล้วจากข้อมูลแบบสอบถาม · '+me()+' · '+now())}}else{miss++;if(h1.iv)sus.push(h1.no)}
+    await new Promise(function(res){setTimeout(res,150)})}
+   st.svsum='ตรวจครบ '+hs.length+' หลัง · พบข้อมูล '+found+' · ยังไม่พบ '+miss+(sus.length?' · ติ๊กไว้แต่ไม่พบในแบบสอบถาม: '+sus.join(', '):'');save();drawMap();mapSide()}
+   catch(er){st.svsum='หยุดที่หลังที่ '+(found+miss+1)+': '+er.message;save();drawMap();mapSide()}finally{st.svrun=false}})();return}
  if(a==='qstop'){st.quick.on=false;drawMap();return mapSide()}
  if(a==='restore'){var r=featOf(b.dataset.id);r.hidden=false;r.hist.push('กู้คืน · '+me()+' · '+now());save();drawMap();return mapSide()}
  if(a==='fsave'&&f){var v=$('fT').value.trim();if(f.kind==='house'){f.no=v;f.status=$('fS').value;f.iv=$('fIv').checked;if(!v&&f.status==='ok')f.status='unk'}else f.title=v;f.note=$('fN').value;f.hist.push('แก้ไข · '+me()+' · '+now());save();toast('บันทึกแล้ว');drawMap();return mapSide()}
@@ -759,12 +784,141 @@ function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
 function maskText(t){var rules=[];pLive().forEach(function(p){pTokens(p).forEach(function(k){rules.push([k,p.alias||'[ยังไม่ตั้งตัวย่อ]'])})});rules.sort(function(a,b){return b[0].length-a[0].length});rules.forEach(function(r){t=t.replace(new RegExp(escRe(r[0]),'gi'),function(){return r[1]})});return t}
 function noAlias(list){var o={};list.forEach(function(s){peopleMentions(s.text).forEach(function(p){if(!p.alias)o[p.id]=p})});return Object.keys(o).map(function(k){return o[k]})}
 
+// ============ เชื่อมต่อ Google Sheet/Drive (ทำงานเฉพาะเมื่อบันทึกที่อยู่เซิร์ฟเวอร์+รหัสแล้ว) ============
+var T4=['notes','snips','people','feats'];
+function arr(t){return t==='notes'?notes:t==='snips'?snips:t==='people'?people:feats}
+function hash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h}
+var PHC={},PHL={},BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+function imgTag(p){if(String(p).indexOf('drive:')!==0)return '<img src="'+p+'" alt="รูป">';var c=PHC[p];if(!c)loadPhoto(p);return '<img data-ph="'+esc(p)+'" src="'+(c||BLANK)+'" alt="รูป">'}
+function loadPhoto(p){if(PHL[p]||!SYNC_ON)return;PHL[p]=1;
+ api('photo',{id:p.slice(6)}).then(function(r){if(r.ok){PHC[p]='data:'+r.mime+';base64,'+r.b64;[].forEach.call(document.querySelectorAll('img[data-ph]'),function(im){if(im.dataset.ph===p)im.src=PHC[p]})}else PHL[p]=0},function(){PHL[p]=0})}
+
+async function apiTo(url,code,action,payload){
+ var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort()},45000);
+ try{var res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({action:action,code:code},payload||{})),signal:ctl.signal});return await res.json()}
+ finally{clearTimeout(tm)}}
+function api(action,payload){return apiTo(CFG.api,CFG.code,action,payload)}
+
+function dirtyList(){var out=[];T4.forEach(function(t){arr(t).forEach(function(r){var j=JSON.stringify(r);if(SY.snap[t+':'+r.id]!==hash(j))out.push({t:t,id:r.id,r:r})})});return out}
+function adopt(t,id,json){var o=JSON.parse(json),a=arr(t),i=-1;a.forEach(function(x,n){if(x.id===id)i=n});if(i>=0)a[i]=o;else a.push(o);SY.snap[t+':'+id]=hash(JSON.stringify(o))}
+function adoptIfClean(t,r){var k=t+':'+r.id,loc=arr(t).filter(function(x){return x.id===r.id})[0];
+ if(loc&&SY.snap[k]!==hash(JSON.stringify(loc)))return false;   // มีแก้ในเครื่องที่ยังไม่ส่ง · รอบส่งหน้าจะชนกับของเซิร์ฟเวอร์แล้วแจ้งเตือน
+ if(loc&&SY.rev[k]===r.rev)return false;
+ adopt(t,r.id,r.json);SY.rev[k]=r.rev;return true}
+async function uploadPhotos(x){var ph=x.r.photos;if(!ph)return;
+ for(var i=0;i<ph.length;i++){if(String(ph[i]).indexOf('data:')===0){var m=/^data:([\w\/+.-]+);base64,(.+)$/.exec(ph[i]);if(!m)throw new Error('รูปเสียหาย');var r=await api('uploadPhoto',{mime:m[1],b64:m[2]});if(!r.ok)throw new Error(r.error||'อัปโหลดรูปไม่สำเร็จ');PHC['drive:'+r.id]=ph[i];ph[i]='drive:'+r.id}}}
+
+function setState(s,err){SY.state=s;SY.err=err||'';updateSyncUI()}
+function updateSyncUI(){var e=$('syncSt');if(!e||!SYNC_ON)return;e.style.display='';var t='';
+ if(SY.state==='sending')t='⟳ กำลังซิงค์…';
+ else if(SY.state==='dirty')t='● รอส่ง…';
+ else if(SY.state==='ok')t='✓ ซิงค์แล้ว '+new Date(SY.lastOk).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+ else if(SY.state==='offline')t='○ ออฟไลน์ · รอส่ง '+dirtyList().length;
+ else if(SY.state==='auth')t='⚠ รหัสไม่ถูกต้อง';
+ else t='⚠ '+(SY.err||'ผิดพลาด');
+ e.textContent=t;e.className='syncst '+(SY.state==='ok'?'ok':SY.state==='sending'||SY.state==='dirty'?'':'bad');e.title=SY.err||''}
+function scheduleSync(){clearTimeout(SY.t);setState('dirty');SY.t=setTimeout(syncNow,1500)}
+function softRefresh(){var ae=document.activeElement,typing=ae&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)&&!ae.classList.contains('mtg')&&!ae.closest('.tgl');
+ renderNav();
+ if(st.view==='map'){drawMap();if(!typing)mapSide();else mapStats()}
+ else if(st.view!=='submit'&&!typing&&!st.pick)VIEWS[st.view]()}
+async function syncNow(){
+ if(!SYNC_ON||SY.busy)return;SY.busy=true;setState('sending');var changed=false;
+ try{
+  var d=dirtyList();
+  for(var off=0;off<d.length;off+=25){
+   var part=d.slice(off,off+25);
+   for(var i=0;i<part.length;i++){if(part[i].t==='notes'||part[i].t==='feats')await uploadPhotos(part[i])}
+   part.forEach(function(x){x.h=hash(JSON.stringify(x.r))});
+   var res=await api('push',{changes:part.map(function(x){return {t:x.t,id:x.id,base:SY.rev[x.t+':'+x.id]||0,data:x.r}})});
+   if(!res.ok){if(res.code==='auth'){setState('auth');return}throw new Error(res.error||'ส่งไม่สำเร็จ')}
+   var conflicts=0,bad=[];
+   res.results.forEach(function(r,i){var x=part[i],k=r.t+':'+r.id;
+    if(r.status==='ok'){SY.rev[k]=r.rev;if(r.json){adopt(r.t,r.id,r.json);changed=true}else SY.snap[k]=x.h}
+    else if(r.status==='conflict'){adopt(r.t,r.id,r.json);SY.rev[k]=r.rev;conflicts++;changed=true}
+    else{SY.snap[k]=x.h;bad.push(r.error||r.status)}});
+   if(conflicts)toast('มีคนแก้ข้อมูล '+conflicts+' รายการพร้อมกับคุณ ระบบใช้ฉบับล่าสุดของเซิร์ฟเวอร์ ลองแก้อีกครั้งถ้าจำเป็น');
+   if(bad.length)toast('ส่งบางรายการไม่ได้: '+bad[0])}
+  var pr=await api('pull',{since:SY.since});
+  if(!pr.ok){if(pr.code==='auth'){setState('auth');return}throw new Error(pr.error||'ดึงข้อมูลไม่สำเร็จ')}
+  T4.forEach(function(t){(pr.recs[t]||[]).forEach(function(r){if(adoptIfClean(t,r))changed=true})});
+  SY.since=pr.now;SY.lastOk=Date.now();persist();setState('ok');if(changed)softRefresh();
+ }catch(e){setState(navigator.onLine?'err':'offline',e&&e.message)}
+ finally{SY.busy=false}}
+function applyUser(){st.role=USER.role;st.lead=USER.wi||1;st.tw=st.ow=st.lead;
+ $('roleBox').style.display='none';var c=$('userChip');c.style.display='';c.textContent='👤 '+USER.name+' · '+({admin:'ผู้ดูแล',lead:'หัวหน้าวิถี '+USER.wi,member:'สมาชิก',viewer:'ผู้ชม'}[USER.role]||USER.role);
+ $('syncSt').style.display='';document.querySelector('.brand .sub').textContent='เขต 8 บึงสวาง · เชื่อมต่อ Google Sheet/Drive ของทีมแล้ว'}
+async function syncInit(){
+ setState('sending');
+ try{var r=await api('login');
+  if(!r.ok){if(r.code==='auth'){setState('auth');openCfg();return}throw new Error(r.error||'เข้าสู่ระบบไม่สำเร็จ')}
+  USER={name:r.name,role:r.role,wi:r.wi};CFG.user=USER;localStorage.setItem('commed_ws_cfg',JSON.stringify(CFG));applyUser();render();
+ }catch(e){setState('offline',e&&e.message)}
+ await syncNow();
+ setInterval(function(){if(!document.hidden)syncNow()},20000);
+ document.addEventListener('visibilitychange',function(){if(!document.hidden)syncNow()});
+ window.addEventListener('online',syncNow)}
+
+// ============ ตั้งค่า / เชื่อมต่อ / จัดการรหัส / แบบสอบถาม ============
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null')||{}}catch(e){return {}}}
+function SVget(){return lsGet('commed_ws_survey')}
+function openCfg(){
+ var h='<div class="mhead"><b style="font-size:16px">ตั้งค่า / เชื่อมต่อ</b><button data-cm="close" class="x" title="ปิด (Esc)">✕</button></div>';
+ if(!SYNC_ON){
+  var pre=(/[#&]api=([^&]+)/.exec(location.hash)||[])[1];
+  h+='<p class="muted">ตอนนี้อยู่ในโหมดตัวอย่าง (ข้อมูลสมมติ เก็บในเครื่องนี้เท่านั้น) ใส่ที่อยู่เซิร์ฟเวอร์และรหัสของคุณเพื่อเชื่อมกับ Google Sheet/Drive ของทีม ข้อมูลจะแชร์กับทุกคนที่มีรหัส</p>';
+  h+='<label class="l">ที่อยู่เซิร์ฟเวอร์ (Web app URL ลงท้าย /exec)</label><input class="f" id="cApi" placeholder="https://script.google.com/macros/s/…/exec" value="'+esc(pre?decodeURIComponent(pre):'')+'">';
+  h+='<label class="l">รหัสของฉัน</label><input class="f" id="cCode" type="password" autocomplete="off" placeholder="รหัสที่ผู้ดูแลให้">';
+  h+='<div class="bar"><button class="primary" data-cm="connect">เชื่อมต่อ</button><span class="muted" id="cMsg"></span></div>';
+  h+='<div class="warnbox soft">เมื่อเชื่อมต่อแล้ว ข้อมูลตัวอย่างในเครื่องนี้จะไม่ถูกใช้ และข้อมูลของทีมจะแสดงแทน ออกจากระบบได้จากหน้านี้</div>'}
+ else{
+  h+='<p>เข้าสู่ระบบเป็น <b>'+esc(USER.name)+'</b> · '+({admin:'ผู้ดูแล',lead:'หัวหน้าวิถี '+USER.wi,member:'สมาชิก',viewer:'ผู้ชม'}[USER.role]||USER.role)+'<br><span class="muted">'+(SY.lastOk?'ซิงค์ล่าสุด '+new Date(SY.lastOk).toLocaleString('th-TH'):'ยังไม่ซิงค์')+(SY.err?' · '+esc(SY.err):'')+'</span></p>';
+  h+='<div class="bar"><button class="primary" data-cm="sync">ซิงค์ตอนนี้</button><button class="danger" data-cm="logout">ออกจากระบบ (ลบข้อมูลที่ค้างในเครื่องนี้)</button></div>';
+  if(USER.role==='admin')h+='<h3>รหัสเข้าใช้ (ผู้ดูแลเท่านั้น)</h3><div id="cCodes" class="muted">กำลังโหลด…</div><div class="grid2" style="margin-top:8px"><div><label class="l">ชื่อผู้ใช้</label><input class="f" id="cNm" placeholder="เช่น หัวหน้าวิถี 3 (ชื่อ)"></div><div><label class="l">บทบาท</label><select class="f" id="cRole"><option value="member">สมาชิก</option><option value="lead">หัวหน้าวิถี</option><option value="viewer">ผู้ชม</option><option value="admin">ผู้ดูแล</option></select></div></div><div id="cWiBox" style="display:none"><label class="l">วิถีที่ดูแล</label><select class="f" id="cWi">'+[1,2,3,4,5,6].map(function(n){return '<option value="'+n+'">'+n+' '+WI[n]+'</option>'}).join('')+'</select></div><div class="bar"><button data-cm="addcode">＋ สร้างรหัสใหม่</button></div><div id="cNew"></div>';
+  var sv=SVget();
+  h+='<h3>เชื่อมกับแบบสอบถาม (ไม่บังคับ)</h3><p class="muted">ใส่ที่อยู่ Apps Script ของแอปแบบสอบถามกับรหัสทีม เพื่อให้แผนที่ตรวจได้ว่าบ้านเลขที่ไหนมีข้อมูลสัมภาษณ์แล้ว (อ่านอย่างเดียว ไม่แก้แบบสอบถาม) ค่านี้เก็บเฉพาะในเครื่องนี้ ไม่ขึ้นเซิร์ฟเวอร์</p>';
+  h+='<label class="l">ที่อยู่ Apps Script ของแบบสอบถาม</label><input class="f" id="sApi" value="'+esc(sv.api||'')+'" placeholder="https://script.google.com/macros/s/…/exec"><div class="grid2"><div><label class="l">รหัสทีม (แบบสอบถาม)</label><input class="f" id="sTeam" type="password" autocomplete="off" value="'+esc(sv.team||'')+'"></div><div><label class="l">หมู่บ้าน (หมู่ที่)</label><input class="f" id="sMoo" value="'+esc(sv.moo||'11')+'"></div></div>';
+  h+='<div class="bar"><button data-cm="svsave">บันทึก</button><button data-cm="svtest">ทดสอบ</button><span class="muted" id="sMsg"></span></div>'}
+ $('mbody').dataset.kind='c';$('mbody').dataset.id='';$('mbody').innerHTML=h;$('modal').style.display='flex';
+ if(SYNC_ON&&USER.role==='admin'){loadCodes();$('cRole').onchange=function(){$('cWiBox').style.display=this.value==='lead'?'':'none'}}}
+$('cfgBtn').onclick=openCfg;
+async function loadCodes(){var r=await api('codes');var box=$('cCodes');if(!box)return;if(!r.ok){box.textContent=r.error||'โหลดไม่ได้';return}
+ box.innerHTML=r.rows.map(function(x){return '<div class="item"><b>'+esc(x.name)+'</b> · '+({admin:'ผู้ดูแล',lead:'หัวหน้าวิถี '+x.wi,member:'สมาชิก',viewer:'ผู้ชม'}[x.role]||esc(x.role))+' · <code>'+esc(x.code)+'</code> <button data-cm="revoke" data-code="'+esc(x.code)+'" class="danger">ลบรหัส</button><div class="muted">เข้าล่าสุด: '+(x.last?esc(new Date(x.last).toLocaleString('th-TH')):'ยังไม่เคย')+'</div></div>'}).join('')}
+$('mbody').addEventListener('click',async function(e){
+ if($('mbody').dataset.kind!=='c')return;var b=e.target.closest('[data-cm]');if(!b)return;var a=b.dataset.cm;
+ if(a==='close')return closeModal();
+ if(a==='connect'){var url=$('cApi').value.trim(),code=$('cCode').value.trim();if(!/^https:\/\/script\.google\.com\//.test(url)&&!/^http:\/\/localhost/.test(url))return $('cMsg').textContent='ที่อยู่ต้องขึ้นต้นด้วย https://script.google.com/';if(!code)return $('cMsg').textContent='ใส่รหัสก่อน';
+  $('cMsg').textContent='กำลังตรวจสอบ…';try{var r=await apiTo(url,code,'login');if(!r.ok){$('cMsg').textContent=r.error||'ไม่สำเร็จ';return}
+   localStorage.setItem('commed_ws_cfg',JSON.stringify({api:url,code:code,user:{name:r.name,role:r.role,wi:r.wi}}));location.href=location.pathname}catch(er){$('cMsg').textContent='เชื่อมต่อไม่ได้: '+er.message}return}
+ if(a==='sync'){closeModal();return syncNow()}
+ if(a==='logout'){try{localStorage.removeItem('commed_ws_cfg');localStorage.removeItem('commed_ws_data');localStorage.removeItem('commed_ws_survey')}catch(er){}location.reload();return}
+ if(a==='addcode'){var nm=$('cNm').value.trim(),role=$('cRole').value;var r2=await api('addCode',{name:nm,role:role,wi:role==='lead'?+$('cWi').value:0});
+  if(!r2.ok){toast(r2.error||'สร้างไม่ได้');return}$('cNew').innerHTML='<div class="warnbox soft">รหัสใหม่ของ <b>'+esc(nm)+'</b>: <code style="font-size:16px;user-select:all">'+esc(r2.code)+'</code><br><span class="muted">ส่งให้เจ้าของรหัสทางส่วนตัว (ไม่โพสต์ในกลุ่มสาธารณะ)</span></div>';$('cNm').value='';loadCodes();return}
+ if(a==='revoke'){var r3=await api('revokeCode',{target:b.dataset.code});if(!r3.ok){toast(r3.error||'ลบไม่ได้');return}toast('ลบรหัสแล้ว');loadCodes();return}
+ if(a==='svsave'){localStorage.setItem('commed_ws_survey',JSON.stringify({api:$('sApi').value.trim(),team:$('sTeam').value.trim(),moo:$('sMoo').value.trim()||'11'}));$('sMsg').textContent='บันทึกแล้ว';return}
+ if(a==='svtest'){localStorage.setItem('commed_ws_survey',JSON.stringify({api:$('sApi').value.trim(),team:$('sTeam').value.trim(),moo:$('sMoo').value.trim()||'11'}));$('sMsg').textContent='กำลังทดสอบ…';
+  try{var s=await svCall({action:'house',moo:'',no:''});$('sMsg').textContent=s.ok?'เชื่อมได้ · ตอนนี้มี '+s.total.people+' ชุด จาก '+s.total.houses+' หลัง':(s.error||'ไม่สำเร็จ')}catch(er){$('sMsg').textContent='เชื่อมไม่ได้: '+er.message}}});
+
+// ---- แบบสอบถาม (อ่านอย่างเดียว ใช้คำสั่ง house ที่มีอยู่แล้ว ไม่แก้ฝั่งแบบสอบถาม) ----
+async function svCall(payload){var s=SVget();if(!s.api||!s.team)throw new Error('ยังไม่ได้ตั้งค่าการเชื่อมแบบสอบถาม');
+ var ctl=new AbortController(),tm=setTimeout(function(){ctl.abort()},45000);
+ try{var r=await fetch(s.api,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({token:s.team},payload)),signal:ctl.signal});return await r.json()}finally{clearTimeout(tm)}}
+function svOn(){var s=SVget();return SYNC_ON&&!!(s.api&&s.team)}
+function svHouse(no){return svCall({action:'house',moo:String(SVget().moo||'11'),no:no})}
+var SVT={at:0,d:null};
+async function svTile(){if(!svOn())return;var el=$('svTile');if(!el)return;
+ try{if(!SVT.d||Date.now()-SVT.at>300000){var r=await svCall({action:'house',moo:'',no:''});if(!r.ok)throw new Error(r.error);SVT={at:Date.now(),d:r.total}}
+  el=$('svTile');if(el)el.innerHTML='<b>'+SVT.d.houses+' หลัง</b>แบบสอบถามจริง · '+SVT.d.people+' ชุด'}catch(e){el=$('svTile');if(el)el.innerHTML='<b style="font-size:13px">แบบสอบถาม</b>'+esc(e.message||'ดึงไม่ได้')}}
+function svRows(sets){return sets.map(function(s){return '<div class="item">'+esc(s.date||s.t||'')+' · '+(s.sex==='1'?'ชาย':s.sex==='2'?'หญิง':esc(s.sex||'?'))+' อายุ '+esc(s.age||'?')+' · '+esc(s.by||'')+' '+esc(s.fac||'')+'</div>'}).join('')}
+
 // ============ เริ่มต้น ============
 $('leadSel').innerHTML=[1,2,3,4,5,6].map(function(n){return '<option value="'+n+'">วิถี '+n+' '+WI[n]+'</option>'}).join('');
 $('roleSel').value=st.role;$('leadSel').value=st.lead;$('leadSel').style.display=st.role==='lead'?'':'none';
 function roleChange(){st.role=$('roleSel').value;st.lead=+$('leadSel').value;$('leadSel').style.display=st.role==='lead'?'':'none';render()}
 $('roleSel').onchange=roleChange;$('leadSel').onchange=roleChange;
+if(SYNC_ON)applyUser();
 render();
+if(SYNC_ON)syncInit();
 </script>
 </body>
 </html>
