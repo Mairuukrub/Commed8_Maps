@@ -328,7 +328,7 @@ function viewSubmit(){
  $('view').innerHTML=h;
  function prev(){var t=$('sTxt').value.trim();if(!t){$('prev').innerHTML='พิมพ์หรือวางข้อความด้านบนเพื่อดูตัวอย่าง';$('prevN').textContent='';return}
   var list=$('sSplit').checked?paras(t):[t];$('prevN').textContent='('+list.length+' ข้อมูลย่อย)';
-  $('prev').innerHTML=list.map(function(p,i){var hm=housesMentioned(p).map(function(no){var ok=feats.some(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===no});return '<span class="lk" title="'+(ok?'มีหมุดบ้านเลขที่นี้บนแผนที่':'ยังไม่มีหมุดบ้านเลขที่นี้')+'">🏠 '+esc(no)+(ok?' ✓':' (ยังไม่มีหมุด)')+'</span>'}).join('');var pm=peopleMentions(p).map(function(x){return '<span class="lk p">👤 '+esc(x.name)+'</span>'}).join('');return '<div class="item">'+(i+1)+'. '+esc(p.length>130?p.slice(0,130)+'…':p)+((hm||pm)?'<div class="chips" style="margin-top:4px">'+hm+pm+'</div>':'')+'</div>'}).join('')+(list.some(function(p){return housesMentioned(p).length||peopleMentions(p).length})?'<div class="muted" style="margin-top:6px">💡 พบบ้านเลขที่หรือชื่อคนในข้อความ หลังส่งแล้วระบบจะเสนอปุ่มให้ผูก คุณกดยืนยันเอง ไม่ผูกให้อัตโนมัติ</div>':'')}
+  $('prev').innerHTML=list.map(function(p,i){var hm=housesMentioned(p).map(function(no){var ok=feats.some(function(f){return !f.hidden&&f.kind==='house'&&nno(f.no)===no});return '<span class="lk" title="'+(ok?'มีหมุดบ้านเลขที่นี้บนแผนที่':'ยังไม่มีหมุดบ้านเลขที่นี้')+'">🏠 '+esc(no)+(ok?' ✓':' (ยังไม่มีหมุด)')+'</span>'}).join('');var pm=peopleMentions(p).map(function(x){return '<span class="lk p">👤 '+esc(x.name)+'</span>'}).join('');return '<div class="item">'+(i+1)+'. '+esc(p.length>130?p.slice(0,130)+'…':p)+((hm||pm)?'<div class="chips" style="margin-top:4px">'+hm+pm+'</div>':'')+'</div>'}).join('')+(list.some(function(p){return housesMentioned(p).length||peopleMentions(p).length})?'<div class="muted" style="margin-top:6px">💡 พบบ้านเลขที่หรือชื่อคนในข้อความ หลังส่งแล้วระบบจะเสนอปุ่มให้ผูก คุณกดยืนยันเอง ไม่ผูกให้อัตโนมัติ</div>':'')}
  ['sTxt','sSplit'].forEach(function(id){$(id).addEventListener('input',prev);$(id).addEventListener('change',prev)});
  $('sSend').onclick=function(){
   var txt=$('sTxt').value.trim();if(!txt)return toast('วางหรือพิมพ์ข้อความก่อน');
@@ -609,10 +609,11 @@ function detailTab(){
  h+='<div class="bar">'+(ed?'<button class="primary" data-fa="fsave">บันทึก</button><button class="danger" data-fa="fhide">ซ่อนจุดนี้</button>':'')+'</div>';
  h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?'<div class="ph">'+f.photos.map(imgTag).join('')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
  var ls=snips.filter(function(s){return (s.fids||[]).indexOf(f.id)>=0});
- var ment=snips.filter(function(s){return ls.indexOf(s)<0&&(f.kind==='house'?(f.no&&housesMentioned(s.text).indexOf(tnorm(f.no))>=0):placeHit(f,s.text))});
- var pp=f.kind==='house'&&f.no?pLive().filter(function(p){return tnorm(p.house)===tnorm(f.no)}):[];
+ var ment=snips.filter(function(s){return ls.indexOf(s)<0&&(f.kind==='house'?(f.no&&housesMentioned(s.text).indexOf(nno(f.no))>=0):placeHit(f,s.text))});
+ var pp=f.kind==='house'&&f.no?pLive().filter(function(p){return nno(p.house)===nno(f.no)}):[];
  if(pp.length)h+='<h3>คนที่อยู่บ้านหลังนี้</h3><div class="chips">'+pp.map(function(p){return '<button data-pp="'+p.id+'">👤 '+esc(p.name)+'</button>'}).join('')+'</div>';
  if(f.kind==='house'&&f.no&&svOn())h+='<h3>📋 แบบสอบถามจริง</h3><div id="svBox"><button data-fa="svchk">ตรวจว่าบ้านนี้สัมภาษณ์แล้วหรือยัง</button></div>';
+ else if(f.kind==='house'&&f.no&&SYNC_ON)h+='<h3>📋 แบบสอบถามจริง</h3><div class="muted">ยังไม่ได้เชื่อมกับแบบสอบถาม จึงยังตรวจไม่ได้ว่าบ้านนี้สัมภาษณ์แล้วหรือยัง</div><div class="bar" style="margin:6px 0 0"><button data-fa="opencfg">ตั้งค่าเชื่อมแบบสอบถาม</button></div>';
  h+='<h3>โน้ตที่ผูกกับจุดนี้ ('+ls.length+')</h3>'+(ls.length?ls.map(function(s){return '<div class="item" style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,90))+'…</div>'}).join(''):'<div class="muted">ยังไม่มี · เปิดโน้ตในคลังกลางแล้วค้นหาจุดนี้เพื่อผูก</div>');
  if(ment.length)h+='<h3>💡 โน้ตที่พูดถึงจุดนี้ แต่ยังไม่ผูก ('+ment.length+')</h3>'+ment.map(function(s){return '<div class="item"><span style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,80))+'…</span>'+(ed?' <button data-fa="flink" data-sid="'+s.id+'">ผูก</button>':'')+'</div>'}).join('');
  h+='<h3>ประวัติการแก้ไข</h3><div class="muted">'+f.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
@@ -640,6 +641,7 @@ $('msBody').addEventListener('click',function(e){
  if(a==='add'){st.draw={kind:$('fKind').value};st.pts=[];if(st.quick)st.quick.on=false;tmp.clearLayers();drawMap();return}
  if(a==='qstart'){st.quick.on=true;st.quick.no=$('qNo').value.trim();st.quick.status=$('qSt').value;st.draw=null;drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}return}
  if(a==='flink'&&f){var fs2=snipOf(b.dataset.sid);if(fs2){addTo(fs2,'fids',f.id,featLabel(f));save();toast('ผูกโน้ตกับ '+featLabel(f)+' แล้ว');mapSide()}return}
+ if(a==='opencfg')return openCfg();
  if(a==='svchk'&&f){var bx=$('svBox');bx.textContent='กำลังตรวจ…';svHouse(f.no).then(function(r){if(!r.ok)throw new Error(r.error||'ไม่สำเร็จ');bx.innerHTML=r.sets.length?'<b>พบ '+r.sets.length+' ชุด</b>'+svRows(r.sets)+(f.iv?'<div class="muted">ติ๊กสัมภาษณ์แล้วอยู่แล้ว</div>':(canTag()?'<div class="bar"><button class="primary" data-fa="svtick">ติ๊ก “สัมภาษณ์แล้ว”</button></div>':'')):'<b>ยังไม่พบข้อมูลของบ้านเลขที่นี้ในแบบสอบถาม</b>'+(f.iv?'<div class="muted">แต่ติ๊กไว้ว่าสัมภาษณ์แล้ว ลองตรวจว่าพิมพ์เลขที่ตรงกันไหม</div>':'')}).catch(function(er){bx.textContent='ตรวจไม่ได้: '+er.message});return}
  if(a==='svtick'&&f){f.iv=true;f.hist.push('ติ๊กสัมภาษณ์แล้วจากข้อมูลแบบสอบถาม · '+me()+' · '+now());save();toast('ติ๊กแล้ว');drawMap();return mapSide()}
  if(a==='svall'){if(st.svrun)return;st.svrun=true;var hs=feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.no}),found=0,miss=0,sus=[],pg=$('svProg');
@@ -659,7 +661,9 @@ $('msBody').addEventListener('change',function(e){var t=e.target;
 
 // ============ ค้นหา · เชื่อมโยง · บุคคล ============
 function tnorm(s){return String(s==null?'':s).replace(/[๐-๙]/g,function(c){return String(c.charCodeAt(0)-3664)}).toLowerCase()}
-function qparse(q){var qn=tnorm(String(q||'').trim());var hq=qn.replace(/^(บ้านเลขที่|บ้านเลข|เลขที่|หลังที่|บ้าน)\s*/,'');return {qn:qn,hq:hq,isNo:/^\d{1,4}(\/\d{1,3})?$/.test(hq)}}
+/* เลขที่บ้านพิมพ์ได้หลายแบบ "17/2" "17-2" "17 / 2" "๑๗/๒" ถือเป็นเลขเดียวกัน (กฎเดียวกับแอปแบบสอบถาม) */
+function nno(s){return tnorm(s).replace(/[\s​]+/g,'').replace(/[-–—\\／]/g,'/')}
+function qparse(q){var qn=tnorm(String(q||'').trim());var hq=nno(qn.replace(/^(บ้านเลขที่|บ้านเลข|เลขที่|หลังที่|บ้าน)\s*/,''));return {qn:qn,hq:hq,isNo:/^\d{1,4}(\/\d{1,3})?$/.test(hq)}}
 function personOf(id){return people.filter(function(p){return p.id===id})[0]}
 function pLive(){return people.filter(function(p){return !p.hidden})}
 function addTo(s,k,id,label){s[k]=s[k]||[];if(s[k].indexOf(id)<0){s[k].push(id);s.hist=s.hist||[];s.hist.push('ผูกกับ '+label+' · '+me()+' · '+now())}}
@@ -685,28 +689,28 @@ function pTokens(p){var key=p.name+'|'+(p.aka||'');var c=PTC[p.id];if(c&&c.k===k
  var t=Object.keys(o).sort(function(a,b){return b.length-a.length});PTC[p.id]={k:key,t:t};return t}
 function housesMentioned(text){var t=tnorm(text),m,o=[];
  /* เขียนชัดว่า “บ้านเลขที่/เลขที่/หลังที่” ถือว่าเป็นเลขที่บ้านแน่ · ส่วน “บ้าน 12” เฉยๆ อาจเป็นจำนวน จึงตัดกรณีตามด้วย หลัง/คน/ร้าน/ปี ฯลฯ */
- var r1=/(?:บ้านเลขที่|บ้านเลข|หลังที่|เลขที่)\s*(\d{1,4}(?:\/\d{1,3})?)(?!\d)/g,r2=/บ้าน\s*(\d{1,4}(?:\/\d{1,3})?)(?!\d)(?!\s*(?:หลัง|คน|ร้าน|ครัว|แห่ง|ไร่|ปี|%|ตัว))/g;
- while((m=r1.exec(t))){if(o.indexOf(m[1])<0)o.push(m[1])}
- while((m=r2.exec(t))){if(o.indexOf(m[1])<0)o.push(m[1])}return o}
+ var r1=/(?:บ้านเลขที่|บ้านเลข|หลังที่|เลขที่)\s*(\d{1,4}(?:\s?[\/\-–]\s?\d{1,3})?)(?!\d)/g,r2=/บ้าน\s*(\d{1,4}(?:\s?[\/\-–]\s?\d{1,3})?)(?!\d)(?!\s*(?:หลัง|คน|ร้าน|ครัว|แห่ง|ไร่|ปี|%|ตัว))/g;
+ while((m=r1.exec(t))){var a=nno(m[1]);if(o.indexOf(a)<0)o.push(a)}
+ while((m=r2.exec(t))){var b=nno(m[1]);if(o.indexOf(b)<0)o.push(b)}return o}
 function placeHit(f,text){if(f.hidden||f.kind==='house')return false;var n=tnorm(pClean(f.title));return n.length>=4&&tnorm(text).indexOf(n)>=0}
 function peopleMentions(text){var t=tnorm(text);return pLive().filter(function(p){return pTokens(p).some(function(k){return t.indexOf(tnorm(k))>=0})})}
 function suggest(s){
  var fi=s.fids||[],pi=s.pids||[],r={houses:[],nohouse:[],places:[],people:[]};
- housesMentioned(s.text).forEach(function(no){var hit=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===no});if(!hit.length)r.nohouse.push(no);hit.forEach(function(f){if(fi.indexOf(f.id)<0)r.houses.push(f)})});
+ housesMentioned(s.text).forEach(function(no){var hit=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&nno(f.no)===no});if(!hit.length)r.nohouse.push(no);hit.forEach(function(f){if(fi.indexOf(f.id)<0)r.houses.push(f)})});
  feats.forEach(function(f){if(placeHit(f,s.text)&&fi.indexOf(f.id)<0)r.places.push(f)});
  peopleMentions(s.text).forEach(function(p){if(pi.indexOf(p.id)<0)r.people.push(p)});
  r.n=r.houses.length+r.places.length+r.people.length;return r}
 
 // ---- ค้นหา ----
 function featScore(f,qp){if(f.hidden)return 0;var qn=qp.qn;
- if(f.kind==='house'){var no=tnorm(f.no);if(qp.isNo&&no){if(no===qp.hq)return 100;if(no.indexOf(qp.hq)===0)return 60;if(no.indexOf(qp.hq)>=0)return 30}
+ if(f.kind==='house'){var no=nno(f.no);if(qp.isNo&&no){if(no===qp.hq)return 100;if(no.indexOf(qp.hq)===0)return 60;if(no.indexOf(qp.hq)>=0)return 30}
   if(!qp.isNo&&tnorm(f.note+' '+HS[f.status].t+(f.iv?' สัมภาษณ์แล้ว':'')).indexOf(qn)>=0)return 20;return 0}
  if(tnorm(f.title).indexOf(qn)>=0)return 70;return tnorm(FK[f.kind].t+' '+f.note).indexOf(qn)>=0?25:0}
-function personHit(p,qp){if(p.hidden)return false;if(qp.isNo)return !!p.house&&tnorm(p.house)===qp.hq;return tnorm([p.name,p.alias,p.aka,p.note,p.house?'บ้าน '+p.house:''].join(' ')).indexOf(qp.qn)>=0}
+function personHit(p,qp){if(p.hidden)return false;if(qp.isNo)return !!p.house&&nno(p.house)===qp.hq;return tnorm([p.name,p.alias,p.aka,p.note,p.house?'บ้าน '+p.house:''].join(' ')).indexOf(qp.qn)>=0}
 function snipSearch(s,qp){var n=noteOf(s),qn=qp.qn,sc=0,why=[],tx=tnorm(s.text);
  if(qp.isNo){if(housesMentioned(s.text).indexOf(qp.hq)>=0)sc=55;else if(tx.indexOf(qp.hq)>=0)sc=25}else if(tx.indexOf(qn)>=0)sc=40;
  if(tnorm([n.informant,n.title,n.by,s.reportName].join(' ')).indexOf(qn)>=0)sc=Math.max(sc,30);
- (s.fids||[]).forEach(function(id){var f=featOf(id);if(!f||f.hidden)return;var hit=f.kind==='house'?(qp.isNo?tnorm(f.no)===qp.hq:tnorm(f.no).indexOf(qn)>=0):tnorm(featLabel(f)+' '+f.note).indexOf(qn)>=0;if(hit){sc=Math.max(sc,50);why.push(featIcon(f)+featLabel(f))}});
+ (s.fids||[]).forEach(function(id){var f=featOf(id);if(!f||f.hidden)return;var hit=f.kind==='house'?(qp.isNo?nno(f.no)===qp.hq:nno(f.no).indexOf(qn)>=0):tnorm(featLabel(f)+' '+f.note).indexOf(qn)>=0;if(hit){sc=Math.max(sc,50);why.push(featIcon(f)+featLabel(f))}});
  (s.pids||[]).forEach(function(id){var p=personOf(id);if(p&&personHit(p,qp)){sc=Math.max(sc,50);why.push('👤 '+p.name)}});
  return sc?{s:s,sc:sc,why:why}:null}
 function excerpt(text,qp){var t=tnorm(text),k=(qp.isNo&&t.indexOf(qp.hq)>=0)?qp.hq:qp.qn,i=t.indexOf(k);if(i<0)return esc(text.slice(0,90)+(text.length>90?'…':''));var a=Math.max(0,i-28),b=Math.min(text.length,i+k.length+60);return (a?'…':'')+esc(text.slice(a,i))+'<mark>'+esc(text.slice(i,i+k.length))+'</mark>'+esc(text.slice(i+k.length,b))+(b<text.length?'…':'')}
@@ -752,8 +756,8 @@ function openPerson(id){
  h+='<div class="muted" style="margin-top:6px">ระบบเสนอผูกจากชื่อเต็ม ชื่อต้น นามสกุล และชื่อเล่นที่ยาวตั้งแต่ 3 ตัวอักษรขึ้นไป ชื่อที่สั้นกว่านั้นค้นหาได้ แต่ระบบไม่เสนอผูกให้ เพื่อกันเดาผิด</div>';
  h+='<div class="bar">'+(ed?'<button class="primary" data-pm="save">บันทึก</button>'+(isNew?'':'<button class="danger" data-pm="hide">ลบบุคคลนี้ (เลิกทำได้)</button>'):'')+'</div>';
  if(!isNew){
-  if(p.house){var hn=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===tnorm(p.house)});h+='<div class="chips">'+(hn.length?'<span class="lk">🏠 บ้านเลขที่ '+esc(p.house)+' มีหมุดบนแผนที่</span><button data-pm="gof" data-fid="'+hn[0].id+'">ดูบนแผนที่</button>':'<span class="muted">ยังไม่มีหมุดบ้านเลขที่ '+esc(p.house)+' บนแผนที่</span>')+'</div>';
-   var mates=pLive().filter(function(x){return x.id!==p.id&&tnorm(x.house)===tnorm(p.house)});
+  if(p.house){var hn=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&nno(f.no)===nno(p.house)});h+='<div class="chips">'+(hn.length?'<span class="lk">🏠 บ้านเลขที่ '+esc(p.house)+' มีหมุดบนแผนที่</span><button data-pm="gof" data-fid="'+hn[0].id+'">ดูบนแผนที่</button>':'<span class="muted">ยังไม่มีหมุดบ้านเลขที่ '+esc(p.house)+' บนแผนที่</span>')+'</div>';
+   var mates=pLive().filter(function(x){return x.id!==p.id&&nno(x.house)===nno(p.house)});
    if(mates.length)h+='<h3>คนอื่นที่อยู่บ้านเลขที่เดียวกัน</h3><div class="chips">'+mates.map(function(x){return '<button data-pm="gop" data-pid="'+x.id+'">👤 '+esc(x.name)+'</button>'}).join('')+'</div>'}
   var linked=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)>=0});
   var sug=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)<0&&peopleMentions(s.text).some(function(x){return x.id===p.id})});
