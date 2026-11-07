@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แผนที่เดินดิน · ต้นแบบ</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#f6f7f4;--panel:#fff;--ink:#1d2a24;--mute:#66726b;--line:#dfe4de;--done:#1f9d55;--todo:#f4f4f2;--nonum:#e58a1f;--accent:#1b5e46;}
+@media (prefers-color-scheme:dark){:root{--bg:#141a17;--panel:#1d2521;--ink:#e8efe9;--mute:#9baba2;--line:#2c3832;--todo:#d9ded9;--accent:#5fc89b;}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:"Sarabun","Noto Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:12px;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header h1{font-size:16px;margin:0;font-weight:700}
+.tag{font-size:12px;background:#fff3cd;color:#6b5200;padding:2px 8px;border-radius:99px;border:1px solid #ecd48a}
+.progress{flex:1;min-width:180px;max-width:360px}
+.progress small{color:var(--mute)}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:3px}
+.bar i{display:block;height:100%;background:var(--done);width:0}
+.search{margin-left:auto;display:flex;gap:6px}
+input,select,textarea,button{font:inherit}
+input,select,textarea{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 9px}
+button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 11px;cursor:pointer}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+button.on{background:#ffe9b8;border-color:#e0b040;color:#4a3500}
+main{flex:1;display:flex;min-height:0}
+#map{flex:1;min-width:0}
+aside{width:320px;background:var(--panel);border-left:1px solid var(--line);padding:14px;overflow:auto}
+aside h2{font-size:15px;margin:0 0 8px}
+.muted{color:var(--mute);font-size:13px}
+.row{display:flex;gap:8px;margin:8px 0}.row>*{flex:1}
+label{display:block;font-size:12px;color:var(--mute);margin-top:10px}
+label+input,label+select,label+textarea{width:100%;margin-top:3px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin:10px 0}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:12px;height:12px;border-radius:4px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4);display:inline-block}
+a{color:var(--accent)}
+.log{font-size:12px;color:var(--mute);border-top:1px solid var(--line);margin-top:12px;padding-top:8px}
+.log div{margin:3px 0}
+/* house label markers */
+.hl{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;line-height:1;border-radius:5px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.55);padding:0 3px;white-space:nowrap}
+.hl.done{background:var(--done);color:#fff}
+.hl.todo{background:#f4f4f2;color:#222}
+.hl.nonum{background:var(--nonum);color:#fff}
+.hl.sel{outline:3px solid #ffd23f}
+.small .hl{font-size:0;padding:0;width:9px!important;height:9px!important}
+.pl{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:#1b4f9c;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6);font-size:14px}
+.leaflet-container{font-family:inherit}
+.mode-hint{position:absolute;z-index:1000;left:50%;transform:translateX(-50%);top:10px;background:#ffe9b8;color:#4a3500;border:1px solid #e0b040;padding:6px 14px;border-radius:99px;font-size:13px;display:none}
+@media (max-width:760px){main{flex-direction:column}aside{width:100%;height:42%;border-left:0;border-top:1px solid var(--line)}.search{margin-left:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>🗺️ แผนที่เดินดิน · บ้านบึงสวาง หมู่ 11</h1>
+  <span class="tag">ต้นแบบ · ข้อมูลสมมติ ตำแหน่งยังไม่ใช่หมู่บ้านจริง</span>
+  <div class="progress">
+    <small id="progText">สัมภาษณ์แล้ว 0 / 224 หลัง</small>
+    <div class="bar"><i id="progBar"></i></div>
+  </div>
+  <div class="search">
+    <input id="q" placeholder="ค้นหาเลขที่บ้าน เช่น 17" size="14">
+    <button id="addBtn" class="primary">＋ ปักหมุดใหม่</button>
+  </div>
+</header>
+<main style="position:relative">
+  <div id="map"></div>
+  <div class="mode-hint" id="hint">แตะบนแผนที่ตรงตำแหน่งที่ต้องการปักหมุด</div>
+  <aside id="side"></aside>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ---------- ข้อมูลสมมติ (สร้างแบบคงที่ ไม่ใช่หมู่บ้านจริง) ----------
+var CENTER=[16.6300,102.6000];
+// โหมดพิกัดจริง: ?real=1&z=17  (พิกัดเขต 8 จากคู่มือ หน้า 8: 16°22'54.5"N 102°40'10.5"E)
+var REAL=/[?&]real=1/.test(location.search);
+var REAL_PT=[16.381806,102.669583];
+var REAL_Z=(location.search.match(/z=(\d+)/)||[0,17])[1]*1;
+if(REAL){CENTER=REAL_PT;}
+function rng(seed){return function(){seed=(seed*1664525+1013904223)%4294967296;return seed/4294967296}}
+var r=rng(69);
+var houses=[],n=1;
+// ถนนสมมติ 3 สาย
+var roads=[
+  {a:[16.6318,102.5972],b:[16.6318,102.6032],k:1},
+  {a:[16.6300,102.5978],b:[16.6300,102.6030],k:2},
+  {a:[16.6282,102.5975],b:[16.6285,102.6028],k:3}
+];
+roads.forEach(function(rd){
+  for(var i=0;i<20;i++){
+    [-1,1].forEach(function(side){
+      if(r()<0.28)return;
+      var t=i/19, lat=rd.a[0]+(rd.b[0]-rd.a[0])*t+side*0.00045+(r()-.5)*0.00008;
+      var lng=rd.a[1]+(rd.b[1]-rd.a[1])*t+(r()-.5)*0.00012;
+      var s=r(); var st=s<0.38?'done':(s<0.40?'nonum':'todo');
+      houses.push({id:'H'+String(n).padStart(3,'0'),no:st==='nonum'?'':String(n+(r()<.3?'/'+(1+Math.floor(r()*3)):'')),khum:rd.k,lat:lat,lng:lng,status:st,note:'',people:st==='done'?1+Math.floor(r()*2):0});
+      n++;
+    });
+  }
+});
+var places=[
+  {id:'P1',type:'วัด',icon:'🛕',name:'วัด (ตัวอย่าง)',lat:16.6310,lng:102.6005},
+  {id:'P2',type:'โรงเรียน',icon:'🏫',name:'โรงเรียน (ตัวอย่าง)',lat:16.6292,lng:102.5990},
+  {id:'P3',type:'รพ.สต.',icon:'🏥',name:'รพ.สต. (ตัวอย่าง)',lat:16.6322,lng:102.6020},
+  {id:'P4',type:'แหล่งน้ำ',icon:'💧',name:'บ่อน้ำ (ตัวอย่าง)',lat:16.6277,lng:102.6012},
+  {id:'P5',type:'ร้านค้า',icon:'🛒',name:'ร้านชำ (ตัวอย่าง)',lat:16.6305,lng:102.5985}
+];
+var STATUS={done:'สัมภาษณ์แล้ว',todo:'ยังไม่สัมภาษณ์',nonum:'ไม่มีเลขที่ / ตรวจสอบ'};
+if(REAL){houses=[];places=[{id:'REF',type:'จุดอ้างอิงเขต 8',icon:'📍',name:'พิกัดในคู่มือ (ยังไม่ใช่ตำแหน่งบ้านจริง)',lat:REAL_PT[0],lng:REAL_PT[1]}];}
+var KEY=REAL?'mapproto_real_v1':'mapproto_v1';
+try{var saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved&&saved.houses){houses=saved.houses;places=saved.places||places;}}catch(e){}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({houses:houses,places:places}))}catch(e){}}
+
+// ---------- แผนที่ ----------
+var map=L.map('map',{zoomControl:true,maxZoom:20}).setView(CENTER,REAL?REAL_Z:17);
+if(REAL){document.querySelector('.tag').textContent='ภาพจริงของพื้นที่ · ยังไม่ได้ปักหมุดบ้าน';}
+var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:18,attribution:'ภาพ: Esri, Maxar, Earthstar Geographics'}).addTo(map);
+var osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+var lyH=L.layerGroup().addTo(map), lyP=L.layerGroup().addTo(map);
+L.control.layers({'ภาพดาวเทียม':sat,'แผนที่ถนน':osm},{'บ้าน':lyH,'สถานที่สำคัญ':lyP},{collapsed:false}).addTo(map);
+
+var selId=null, adding=false, markers={};
+function houseIcon(h,sel){
+  var txt=h.no||'?';
+  var w=Math.max(22,txt.length*8+8);
+  return L.divIcon({className:'',html:'<div class="hl '+h.status+(sel?' sel':'')+'" style="width:'+w+'px;height:18px">'+txt+'</div>',iconSize:[w,18],iconAnchor:[w/2,9]});
+}
+function draw(){
+  lyH.clearLayers();markers={};
+  houses.forEach(function(h){
+    var m=L.marker([h.lat,h.lng],{icon:houseIcon(h,h.id===selId),draggable:true,title:h.no});
+    m.on('click',function(){select(h.id)});
+    m.on('dragend',function(e){var p=e.target.getLatLng();h.lat=p.lat;h.lng=p.lng;h.hist=(h.hist||[]).concat(['ย้ายตำแหน่งหมุด · '+now()]);persist();select(h.id)});
+    m.addTo(lyH);markers[h.id]=m;
+  });
+  lyP.clearLayers();
+  places.forEach(function(p){
+    L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="pl">'+p.icon+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}).bindTooltip(p.type+': '+p.name).addTo(lyP);
+  });
+  progress();zoomCls();
+}
+function zoomCls(){document.getElementById('map').classList.toggle('small',map.getZoom()<17)}
+map.on('zoomend',zoomCls);
+function now(){var d=new Date();return d.toLocaleDateString('th-TH')+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
+function progress(){
+  var done=houses.filter(function(h){return h.status==='done'}).length;
+  var total=224;
+  document.getElementById('progText').textContent='สัมภาษณ์แล้ว '+done+' / '+total+' หลัง ('+(done/total*100).toFixed(1)+'%) · ปักหมุดแล้ว '+houses.length+' หลัง';
+  document.getElementById('progBar').style.width=Math.min(100,done/total*100)+'%';
+}
+
+// ---------- แผงข้างขวา ----------
+var side=document.getElementById('side');
+function home(){
+  side.innerHTML='<h2>ภาพรวม</h2><p class="muted">แตะหมุดบ้านเพื่อดู/แก้ไขรายละเอียด ลากหมุดเพื่อย้ายตำแหน่ง หรือกด “ปักหมุดใหม่”</p>'+
+  '<div class="legend"><span><i class="dot" style="background:var(--done)"></i>สัมภาษณ์แล้ว</span><span><i class="dot" style="background:#f4f4f2"></i>ยังไม่สัมภาษณ์</span><span><i class="dot" style="background:var(--nonum)"></i>ไม่มีเลขที่/ตรวจสอบ</span></div>'+
+  '<h2 style="margin-top:16px">รายการที่ต้องตรวจ</h2><div id="todoList" class="muted"></div>'+
+  '<p class="muted" style="margin-top:16px">ต้นแบบนี้เก็บข้อมูลไว้ในเบราว์เซอร์เครื่องนี้เท่านั้น ของจริงจะบันทึกลงชีตกลางของทีม มีรหัสทีมและประวัติการแก้ไข</p>';
+  var dup={},issues=[];
+  houses.forEach(function(h){if(h.no){dup[h.no]=(dup[h.no]||0)+1}});
+  houses.forEach(function(h){
+    if(!h.no)issues.push('<div>🟠 หมุด '+h.id+' ยังไม่มีเลขที่บ้าน <a href="#" data-id="'+h.id+'">ดู</a></div>');
+    else if(dup[h.no]>1)issues.push('<div>🔴 เลขที่ '+h.no+' ซ้ำ '+dup[h.no]+' หมุด <a href="#" data-id="'+h.id+'">ดู</a></div>');
+  });
+  document.getElementById('todoList').innerHTML=issues.length?issues.join(''):'ไม่พบปัญหา';
+  side.querySelectorAll('a[data-id]').forEach(function(a){a.onclick=function(e){e.preventDefault();select(a.dataset.id,true)}});
+}
+function select(id,fly){
+  selId=id;var h=houses.filter(function(x){return x.id===id})[0];if(!h)return home();
+  if(fly)map.flyTo([h.lat,h.lng],19);
+  draw();
+  side.innerHTML='<h2>บ้านเลขที่ '+(h.no||'<span class="muted">(ยังไม่ระบุ)</span>')+'</h2>'+
+  '<div class="muted">รหัสภายใน '+h.id+' · จำนวนชุดที่สัมภาษณ์ '+h.people+' ชุด</div>'+
+  '<label>เลขที่บ้าน</label><input id="fNo" value="'+(h.no||'')+'" placeholder="เว้นว่างได้ถ้าไม่มีเลขที่">'+
+  '<div class="row"><div><label>คุ้ม</label><select id="fK"><option value="1">คุ้ม 1</option><option value="2">คุ้ม 2</option><option value="3">คุ้ม 3</option></select></div>'+
+  '<div><label>สถานะ</label><select id="fS"><option value="todo">ยังไม่สัมภาษณ์</option><option value="done">สัมภาษณ์แล้ว</option><option value="nonum">ไม่มีเลขที่/ตรวจสอบ</option></select></div></div>'+
+  '<label>รายละเอียด / หมายเหตุ</label><textarea id="fN" rows="4" placeholder="เช่น ลักษณะบ้าน คนในบ้านไม่อยู่ เจ้าของชื่อ…">'+(h.note||'')+'</textarea>'+
+  '<div class="row"><button class="primary" id="save">บันทึก</button><button id="back">ปิด</button></div>'+
+  '<div class="row"><button id="del" style="color:#b3261e">ซ่อนหมุดนี้</button></div>'+
+  '<div class="log"><b>ประวัติการแก้ไข</b>'+((h.hist||[]).slice(-5).reverse().map(function(t){return '<div>• '+t+'</div>'}).join('')||'<div>ยังไม่มี</div>')+'</div>';
+  document.getElementById('fK').value=h.khum;document.getElementById('fS').value=h.status;
+  document.getElementById('save').onclick=function(){
+    var no=document.getElementById('fNo').value.trim();
+    h.hist=(h.hist||[]).concat(['แก้ไขโดย “ผู้ใช้ตัวอย่าง” · '+now()]);
+    h.no=no;h.khum=+document.getElementById('fK').value;h.status=document.getElementById('fS').value;h.note=document.getElementById('fN').value;
+    persist();select(h.id);
+  };
+  document.getElementById('back').onclick=function(){selId=null;draw();home()};
+  document.getElementById('del').onclick=function(){houses=houses.filter(function(x){return x.id!==h.id});persist();selId=null;draw();home()};
+}
+
+// ---------- ปักหมุดใหม่ / ค้นหา ----------
+var addBtn=document.getElementById('addBtn'),hint=document.getElementById('hint');
+addBtn.onclick=function(){adding=!adding;addBtn.classList.toggle('on',adding);addBtn.textContent=adding?'ยกเลิกการปักหมุด':'＋ ปักหมุดใหม่';hint.style.display=adding?'block':'none';map.getContainer().style.cursor=adding?'crosshair':''};
+map.on('click',function(e){
+  if(!adding){return}
+  var id='H'+String(Date.now()).slice(-6);
+  houses.push({id:id,no:'',khum:1,lat:e.latlng.lat,lng:e.latlng.lng,status:'nonum',note:'',people:0,hist:['สร้างหมุดใหม่ · '+now()]});
+  adding=false;addBtn.classList.remove('on');addBtn.textContent='＋ ปักหมุดใหม่';hint.style.display='none';map.getContainer().style.cursor='';
+  persist();select(id);
+});
+document.getElementById('q').addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var v=this.value.trim();var h=houses.filter(function(x){return x.no===v})[0];
+  if(h)select(h.id,true);else side.innerHTML='<h2>ไม่พบเลขที่ '+v+'</h2><p class="muted">ยังไม่มีหมุดเลขที่นี้ กด “ปักหมุดใหม่” เพื่อเพิ่ม</p>';
+});
+draw();home();
+(function(){var m=location.search.match(/sel=([^&]+)/);if(m){var h=houses.filter(function(x){return x.no===decodeURIComponent(m[1])})[0];if(h){h.hist=h.hist||['แก้ไขโดย “ผู้ใช้ตัวอย่าง” · ตัวอย่างประวัติ','สร้างหมุด · ตัวอย่างประวัติ'];select(h.id,true)}}})();
+</script>
+</body>
+</html>
