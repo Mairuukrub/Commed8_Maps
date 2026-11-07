@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ศูนย์รวมวิถีชุมชน เขต 8 · ต้นแบบ 3.2</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f1;--panel:#fff;--panel2:#f7f9f6;--ink:#17231d;--mute:#5b6a62;--line:#e1e7e0;--line2:#cdd7cc;--accent:#17614a;--accent-ink:#fff;--accent-soft:#e2f1e9;--warn-bg:#fff4d1;--warn-ink:#6b5200;--chip:#eef3ed;--ok-bg:#d9f2e3;--ok-ink:#14532d;--bad:#c0392b;--sh1:0 1px 2px rgba(23,35,29,.06),0 1px 3px rgba(23,35,29,.05);--sh2:0 10px 28px rgba(23,35,29,.14);--r:14px}
+@media (prefers-color-scheme:dark){:root{--bg:#0e1411;--panel:#18211d;--panel2:#1d2823;--ink:#e8efe9;--mute:#9aaba2;--line:#2a3630;--line2:#384842;--accent:#5fc89b;--accent-ink:#0b1a13;--accent-soft:#1c3a2d;--warn-bg:#3a3110;--warn-ink:#f2dc8c;--chip:#25302a;--ok-bg:#1c4430;--ok-ink:#b8f0cf;--bad:#ff8a7a;--sh1:0 1px 2px rgba(0,0,0,.4);--sh2:0 10px 28px rgba(0,0,0,.55)}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:"Noto Sans Thai","Sarabun","Leelawadee UI",Tahoma,system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;font-size:14.5px;line-height:1.55;-webkit-font-smoothing:antialiased}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* ---------- หัวเว็บ ---------- */
+header.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;position:relative;z-index:2600}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#25906c,#0f4a38);display:grid;place-items:center;font-size:20px;box-shadow:var(--sh1)}
+.brand h1{font-size:16px;margin:0;font-weight:700;line-height:1.25}
+.brand .sub{font-size:11.5px;color:var(--mute)}
+.search{position:relative;flex:1;min-width:230px;max-width:560px}
+.search input{width:100%;padding:9px 40px 9px 36px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.search input:focus{background:var(--panel);border-color:var(--accent)}
+.search .si{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.55;pointer-events:none;font-size:14px}
+.search kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:inherit;font-size:11px;color:var(--mute);border:1px solid var(--line2);border-radius:6px;padding:0 6px;background:var(--panel);pointer-events:none}
+.sres{display:none;position:absolute;left:0;right:0;top:calc(100% + 8px);background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh2);max-height:72vh;overflow:auto;padding:6px}
+.sres h4{margin:8px 10px 2px;font-size:12px;color:var(--mute);font-weight:600}
+.sr{display:flex;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;align-items:flex-start}
+.sr:hover{background:var(--accent-soft)}
+.sr .ic{width:28px;height:28px;border-radius:9px;background:var(--chip);display:grid;place-items:center;flex:none;font-size:14px}
+.sr .tt{min-width:0;flex:1}
+.sr .tt b{display:block;font-weight:600}
+.sr .tt small{display:block;color:var(--mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sr mark,.raw mark{background:#ffe08a;color:#222;border-radius:3px;padding:0 1px}
+.sres .more{display:block;width:100%;text-align:center;margin-top:6px;border-style:dashed}
+.role{display:flex;align-items:center;gap:6px;background:var(--chip);padding:4px 6px 4px 10px;border-radius:12px;margin-left:auto}
+.role b{font-size:12px;color:var(--mute);font-weight:600}
+.role select{border:0;background:var(--panel);padding:4px 8px}
+/* ---------- แท็บนำทาง ---------- */
+nav{display:flex;gap:4px;padding:6px 12px;background:var(--panel);border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:thin}
+nav button{border:0;border-radius:10px;background:transparent;padding:7px 13px;white-space:nowrap;display:flex;gap:6px;align-items:center;color:var(--mute);font-weight:500;transition:background .15s,color .15s}
+nav button:hover{background:var(--chip);color:var(--ink)}
+nav button.on{background:var(--accent-soft);color:var(--accent);font-weight:700}
+nav .ni{font-size:15px}
+nav .b{min-width:18px;padding:0 6px;border-radius:99px;background:var(--bad);color:#fff;font-size:11px;text-align:center;line-height:18px}
+/* ---------- พื้นฐาน ---------- */
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:7px 10px;max-width:100%;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+button{border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:6px 13px;cursor:pointer;transition:background .15s,border-color .15s,transform .05s}
+button:hover{background:var(--chip)}
+button:active{transform:translateY(1px)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;box-shadow:var(--sh1)}
+button.primary:hover{filter:brightness(1.08);background:var(--accent)}
+button.danger{color:var(--bad)}
+button.x{border:0;background:var(--chip);width:30px;height:30px;padding:0;border-radius:50%}
+button:disabled,input:disabled,textarea:disabled,select:disabled{opacity:.5;cursor:not-allowed}
+.grow{flex:1}
+#view{flex:1;overflow:auto;padding:18px 16px 40px;animation:fade .18s ease}
+@keyframes fade{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+.wrap{max-width:1000px;margin:0 auto}
+.pagehead{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:6px}
+h2{font-size:20px;margin:0 0 4px;font-weight:700}
+h3{font-size:14px;margin:18px 0 8px;font-weight:700;display:flex;align-items:center;gap:8px}
+h3::before{content:'';width:4px;height:14px;border-radius:2px;background:var(--accent);flex:none}
+h3.nb::before{display:none}
+.muted{color:var(--mute);font-size:12.5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+@media (max-width:720px){.grid2{grid-template-columns:1fr}}
+label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-weight:500}
+.f{width:100%}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh1);margin:10px 0}
+/* ---------- การ์ดข้อมูล ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:11px 14px 11px 18px;margin:9px 0;cursor:pointer;position:relative;overflow:hidden;box-shadow:var(--sh1);transition:box-shadow .15s,transform .15s,border-color .15s}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--stripe,var(--line2))}
+.card:hover{border-color:var(--line2);box-shadow:var(--sh2);transform:translateY(-1px)}
+.card .txt{margin:7px 0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.card small{color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.wi{color:#fff;border-radius:99px;padding:1px 10px;font-size:12px;font-weight:500;white-space:nowrap}
+.wi.o{background:transparent!important;border:1.5px solid currentColor}
+.pill{display:inline-block;font-size:11.5px;padding:1px 9px;border-radius:99px;background:var(--chip);border:1px solid var(--line)}
+.pill.ok{background:var(--ok-bg);color:var(--ok-ink);border-color:transparent}
+.pill.warn{background:var(--warn-bg);color:var(--warn-ink);border-color:transparent}
+.lk{display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:1px 9px;font-size:12px;font-weight:500}
+.lk.p{background:#e8e3f7;color:#4a3a8a}
+@media (prefers-color-scheme:dark){.lk.p{background:#2e2850;color:#c9bff0}}
+.lk button{border:0;background:transparent;padding:0 2px;line-height:1;color:inherit;opacity:.7}
+.lk button:hover{opacity:1;background:transparent}
+.sugg{background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:1px 9px;font-size:12px}
+.qt{display:flex;gap:5px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.qt button{padding:0 9px;font-size:12px;border-radius:99px;border:1.5px solid var(--line2);background:transparent;min-width:28px}
+.qt button.on{color:#fff;border-color:transparent}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:10px;margin:12px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--mute);box-shadow:var(--sh1)}
+.stat b{display:block;font-size:22px;color:var(--ink);line-height:1.2}
+.fchips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 4px}
+.fc{border:1.5px solid var(--line2);background:var(--panel);border-radius:99px;padding:3px 12px;font-size:13px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fc:hover{border-color:var(--c,var(--accent))}
+.fc.on{background:var(--c,var(--accent));color:#fff;border-color:transparent;font-weight:600}
+.fc i{font-style:normal;opacity:.75;margin-left:4px;font-size:12px}
+.filters{position:sticky;top:-18px;z-index:5;background:var(--bg);padding:8px 0 4px;margin-top:6px}
+.tgl{position:relative;display:inline-flex;align-items:center;gap:4px;font-size:13px;padding:2px 11px;margin:0 6px 6px 0;border-radius:99px;border:1.5px solid var(--c);color:var(--c);cursor:pointer;user-select:none;transition:all .15s}
+.tgl input{position:absolute;opacity:0;pointer-events:none}
+.tgl.on{background:var(--c);color:#fff;font-weight:600}
+.tgl.dis{opacity:.5;cursor:not-allowed}
+.empty{text-align:center;color:var(--mute);padding:34px 10px;border:1.5px dashed var(--line2);border-radius:var(--r);margin:12px 0}
+.empty .em{font-size:34px;display:block;margin-bottom:4px}
+.kan{display:grid;grid-template-columns:repeat(4,minmax(230px,1fr));gap:12px;overflow-x:auto;align-items:start;padding-bottom:6px}
+.col{background:var(--chip);border-radius:var(--r);padding:8px 10px 10px;min-height:120px;border-top:4px solid var(--kc,var(--line2))}
+.col[data-k=new]{--kc:#2f8fe0}.col[data-k=checked]{--kc:#1b7f5a}.col[data-k=pick]{--kc:#e0a21a}.col[data-k=skip]{--kc:#9aa0a6}
+.col h3{margin:6px 4px 6px}
+.col h3::before{display:none}
+.col .card{cursor:default;margin:8px 0}
+.col .card[data-open]{cursor:pointer}
+.item{border-top:1px solid var(--line);padding:9px 0;font-size:13.5px}
+.warnbox{background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;padding:9px 13px;font-size:13px;margin:10px 0}
+.warnbox.soft{background:var(--accent-soft);color:var(--ink)}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#6a58b5,#3e2f8a);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+.prow{display:flex;gap:12px;align-items:center}
+.prow .info{flex:1;min-width:0}
+/* ---------- แผนที่ ---------- */
+#v-map{flex:1;min-height:0;display:none;flex-direction:column}
+#mapStats{display:flex;gap:8px;padding:8px 12px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line)}
+.tile{background:var(--chip);border-radius:12px;padding:6px 13px;min-width:118px;flex:none;font-size:12.5px;color:var(--mute)}
+.tile b{font-size:19px;display:block;color:var(--ink);line-height:1.3}
+.tile .meter{height:6px;border-radius:99px;background:var(--line2);overflow:hidden;margin-top:4px}
+.tile .meter i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.3)}
+#mapBody{flex:1;min-height:0;display:flex}
+#map{flex:1;min-width:0}
+#mapSide{width:372px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.mapsearch{padding:10px 12px 8px;border-bottom:1px solid var(--line)}
+.mapsearch input{width:100%;border-radius:10px}
+#mapQRes .item{cursor:pointer;padding:6px 4px}
+#mapQRes .item:hover{background:var(--accent-soft)}
+.mtabs{display:flex;border-bottom:1px solid var(--line)}
+.mtabs button{flex:1;border:0;border-radius:0;background:transparent;padding:9px 4px;font-size:13px;border-bottom:3px solid transparent;color:var(--mute)}
+.mtabs button.on{border-bottom-color:var(--accent);color:var(--accent);font-weight:700}
+#msBody{padding:12px 14px;overflow:auto;flex:1}
+.kind{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13.5px}
+.kind .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(0,0,0,.35);flex:none}
+.kind .n{margin-left:auto;color:var(--mute);font-size:12px}
+.row2{display:flex;gap:8px;margin-top:6px}
+.hl{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;line-height:1;border-radius:5px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.6);padding:0 3px;white-space:nowrap;height:18px}
+.hl.iv{box-shadow:0 0 0 3px #2ecc71,0 1px 3px rgba(0,0,0,.6)}
+.hl.sel{outline:3px solid #ffd23f}
+.pl{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.65);font-size:14px}
+.pl.sel{outline:3px solid #ffd23f}
+.small .hl{font-size:0;padding:0;width:9px!important;height:9px!important}
+@media (max-width:820px){#mapBody{flex-direction:column}#mapSide{width:100%;height:48%;border-left:0;border-top:1px solid var(--line)}}
+/* ---------- หน้าต่างลอย ---------- */
+.modal{position:fixed;inset:0;background:rgba(10,20,15,.55);backdrop-filter:blur(2px);z-index:3000;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 10px}
+.mp{background:var(--panel);border-radius:18px;max-width:800px;width:100%;padding:0 20px 20px;border:1px solid var(--line);box-shadow:var(--sh2);animation:pop .16s ease}
+@keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.mhead{position:sticky;top:0;background:var(--panel);z-index:2;display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;border-bottom:1px solid var(--line);margin-bottom:8px;border-radius:18px 18px 0 0}
+.raw{white-space:pre-wrap;background:var(--chip);border-radius:12px;padding:11px 13px;font-size:13.5px;max-height:220px;overflow:auto;user-select:text}
+.sug{background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}
+.sug button{margin:4px 6px 0 0;background:var(--panel);font-size:12.5px;padding:2px 10px}
+.sug button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:4px 14px}
+.toast{position:fixed;z-index:4000;left:50%;bottom:22px;transform:translateX(-50%);background:#1d2a24;color:#fff;padding:10px 16px;border-radius:12px;display:none;font-size:13.5px;max-width:90vw;box-shadow:var(--sh2)}
+.toast button{background:transparent;color:#9be7c4;border-color:#4a6b5c}
+.hint{position:absolute;z-index:1000;left:50%;transform:translateX(-50%);top:10px;background:var(--warn-bg);color:var(--warn-ink);padding:7px 14px;border-radius:99px;font-size:13px;display:none;gap:8px;align-items:center;box-shadow:var(--sh2)}
+.ph{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.ph img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.pin{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.leaflet-container{font-family:inherit}
+a{color:var(--accent)}
+@media (max-width:640px){header.top{padding:8px 12px;gap:8px}.search{order:3;max-width:none;flex-basis:100%}.role{margin-left:0}.brand .sub{display:none}#view{padding:14px 12px 40px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand"><span class="logo">🧭</span><div><h1>ศูนย์รวมวิถีชุมชน</h1><div class="sub">เขต 8 บึงสวาง · ต้นแบบ 3.2 · ข้อมูลสมมติ ยังไม่ต่อชีต/Drive</div></div></div>
+  <div class="search"><span class="si">🔍</span><input id="gq" type="search" autocomplete="off" placeholder="ค้นหาทุกอย่าง เช่น 21, สมศรี, น้ำท่วม"><kbd>/</kbd><div id="sres" class="sres"></div></div>
+  <div class="role" title="ของจริงใช้รหัสส่วนตัว สลับตรงนี้เพื่อดูว่าแต่ละบทบาททำอะไรได้">
+    <b>ดูในบทบาท</b>
+    <select id="roleSel"><option value="admin">ผู้ดูแล (หัวหน้าเขต)</option><option value="lead">หัวหน้าวิถี</option><option value="member">สมาชิก</option><option value="viewer">ผู้ชม</option></select>
+    <select id="leadSel"></select>
+  </div>
+</header>
+<nav id="nav"></nav>
+<div id="view"></div>
+<div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
+<div class="modal" id="modal"><div class="mp" id="mbody"></div></div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ============ ค่าคงที่ (ลำดับวิถีตามรายงานเขต 3/7/9) ============
+var C=[16.381806,102.669583];
+var WI=[null,'แผนที่เดินดิน','ผังเครือญาติ','โครงสร้างองค์กรชุมชน','ระบบสุขภาพชุมชน','ปฏิทินชุมชน','ประวัติศาสตร์ชุมชน'];
+var WC=[null,'#2f8fe0','#b0408f','#1b7f5a','#c97a12','#d03b4f','#7a5bb5'];
+var METHODS=['สัมภาษณ์เชิงลึก','สนทนากลุ่ม (FGD)','สังเกตแบบมีส่วนร่วม','ข้อมูลทุติยภูมิ','อื่นๆ'];
+var STAT={new:'ใหม่',checked:'ตรวจแล้ว',pick:'เลือกเก็บไว้ใช้',skip:'ไม่ใช้'};
+var STORD=['new','checked','pick','skip'];
+var KEY='commed_proto3_v4';
+var TOTAL=224; // จำนวนหลังคาเรือนตามคู่มือ (ยังไม่ยืนยันกับ รพ.สต.)
+var FK={ // ชนิดของจุดบนแผนที่เดินดิน
+ house:{t:'บ้าน',geom:'point'},
+ shop:{t:'ร้านค้า',i:'🛒',c:'#c77dd6',geom:'point'},
+ temple:{t:'วัด / ศาล / ที่ศักดิ์สิทธิ์',i:'🛕',c:'#e8741f',geom:'point'},
+ water:{t:'แหล่งน้ำ (พื้นที่)',c:'#2f8fe0',geom:'poly',fill:.35},
+ stream:{t:'ลำห้วย / คลอง (เส้น)',c:'#2f8fe0',geom:'line'},
+ green:{t:'พื้นที่ธรรมชาติ',c:'#3fae49',geom:'poly',fill:.35},
+ livestock:{t:'เลี้ยงสัตว์ / อาชีพ',i:'🐔',c:'#a0763a',geom:'point'},
+ person:{t:'คนสำคัญ / องค์กร',i:'👤',c:'#1b6fb5',geom:'point'},
+ health:{t:'ที่พึ่งสุขภาพ',i:'🏥',c:'#d83a56',geom:'point'},
+ problem:{t:'จุดปัญหา',i:'⚠️',c:'#d98e00',geom:'point'},
+ boundary:{t:'ขอบเขตหมู่บ้าน / คุ้ม',c:'#e02424',geom:'poly',fill:0}
+};
+var HS={nonum:{t:'ไม่มีบ้านเลขที่',c:'#b5412d',f:'#fff'},unk:{t:'ไม่ทราบบ้านเลขที่',c:'#8e5de0',f:'#fff'},ok:{t:'บ้านปกติ',c:'#f2c01e',f:'#222'},ruin:{t:'บ้านร้าง',c:'#9aa0a6',f:'#222'}};
+var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,fvis:{notes:true},quick:null,draw:null,pts:[],mask:true};
+var notes=[],snips=[],feats=[],people=[];
+
+// ============ ยูทิลิตี ============
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function now(){var d=new Date();return d.toLocaleDateString('th-TH')+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
+function today(){return new Date().toLocaleDateString('th-TH')}
+function uid(p){return p+Math.random().toString(36).slice(2,8)}
+function toast(t,undo){var e=$('toast');e.textContent=t;if(undo){var b=document.createElement('button');b.textContent='เลิกทำ';b.style.marginLeft='10px';b.onclick=function(){e.style.display='none';undo()};e.appendChild(b)}e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(function(){e.style.display='none'},undo?8000:3400)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({notes:notes,snips:snips,feats:feats,people:people}))}catch(e){toast('บันทึกลงเครื่องไม่ได้ (พื้นที่เต็ม) ลองลดจำนวนรูป')}}
+function noteOf(s){return notes.filter(function(n){return n.id===s.noteId})[0]||{by:'',method:'',informant:'',date:'',photos:[],text:'',title:''}}
+function snipOf(id){return snips.filter(function(s){return s.id===id})[0]}
+function me(){return st.role==='admin'?'หัวหน้าเขต (ตัวอย่าง)':st.role==='lead'?'หัวหน้าวิถี '+st.lead:st.role==='member'?'สมาชิก ก.':'ผู้ชม'}
+function has(s,w){return s.wi.indexOf(w)>=0}
+function stOf(s,w){return (s.st&&s.st[w])||'new'}
+function canTag(){return st.role!=='viewer'}
+function canTriageW(w){return st.role==='admin'||(st.role==='lead'&&st.lead===w)}
+function canRemoveTag(s,w){return canTag()}
+function canEditText(s){return st.role==='admin'||(canTag()&&s.by===me())}
+function setTag(s,w,on,quiet){s.st=s.st||{};s.hist=s.hist||[];
+ if(on){if(!has(s,w)){s.wi.push(w);s.wi.sort();if(!quiet)s.hist.push('เพิ่มป้ายวิถี '+w+' · '+me()+' · '+now())}if(!s.st[w])s.st[w]='new'}
+ else{if(has(s,w)&&!quiet)s.hist.push('เอาป้ายวิถี '+w+' ออก · '+me()+' · '+now());s.wi=s.wi.filter(function(x){return x!==w})} /* สถานะเดิมของวิถีนั้นยังเก็บไว้ ติดป้ายกลับแล้วกลับมาเหมือนเดิม */}
+function wiChip(w,o,star){return '<span class="wi'+(o?' o':'')+'" style="'+(o?'color:':'background:')+WC[w]+'">'+w+' '+esc(WI[w])+(star?' ★':'')+'</span>'}
+function tagChips(s,skipW){if(!s.wi.length)return '<span class="pill warn">ยังไม่ระบุวิถี</span>';return s.wi.filter(function(w){return w!==skipW}).map(function(w){return wiChip(w,false,stOf(s,w)==='pick')}).join('')}
+function samplePhoto(label,hue){var c=document.createElement('canvas');c.width=320;c.height=240;var x=c.getContext('2d');var g=x.createLinearGradient(0,0,320,240);g.addColorStop(0,'hsl('+hue+',45%,55%)');g.addColorStop(1,'hsl('+(hue+40)+',45%,35%)');x.fillStyle=g;x.fillRect(0,0,320,240);x.fillStyle='rgba(255,255,255,.9)';x.font='bold 22px sans-serif';x.textAlign='center';x.fillText('ตัวอย่างรูป',160,115);x.font='16px sans-serif';x.fillText(label,160,145);return c.toDataURL('image/jpeg',.7)}
+function readPhotos(files,cb){var arr=Array.prototype.slice.call(files||[]);if(!arr.length)return cb([]);var out=[],left=arr.length;function done(){left--;if(left===0)cb(out)}
+ arr.forEach(function(f){var fr=new FileReader();fr.onerror=done;fr.onload=function(){var img=new Image();img.onerror=done;img.onload=function(){var s=Math.min(1,1024/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);out.push(c.toDataURL('image/jpeg',.7));done()};img.src=fr.result};fr.readAsDataURL(f)})}
+
+// ============ แยกย่อหน้า (ไม่มีการเดาวิถี) ============
+function paras(t){var a=t.split(/\n\s*\n/).map(function(x){return x.trim()}).filter(Boolean);if(a.length<2)a=t.split(/\n/).map(function(x){return x.trim()}).filter(Boolean);var out=[];a.forEach(function(p){if(out.length&&p.length<25)out[out.length-1]+=' '+p;else out.push(p)});return out.length?out:[t.trim()]}
+function newSnip(note,text,tags){var o={id:uid('S'),noteId:note.id,text:text,wi:[],st:{},flag:false,loc:null,fids:[],pids:[],hist:[],by:note.by,at:note.at,reportName:''};tags.forEach(function(w){setTag(o,w,true,true)});snips.push(o);return o}
+function makeSnips(note,tags,split){(split?paras(note.text):[note.text.trim()]).forEach(function(p){newSnip(note,p,tags)})}
+
+// ============ ข้อมูลตัวอย่าง (สมมติทั้งหมด) ============
+function seed(){
+ notes=[];snips=[];feats=[];people=[];seedFeats();
+ var HN=feats.filter(function(f){return f.kind==='house'&&f.no}).map(function(f){return f.no});
+ function addNote(o){o.id=uid('N');o.photos=o.photos||[];o.docs=o.docs||'';notes.push(o);makeSnips(o,[],true);return o}
+ var A=addNote({by:'สมาชิก ก.',at:'6 พ.ย. 2569 10:20',title:'คุยกับผู้ใหญ่บ้าน (ตัวอย่าง)',method:METHODS[0],informant:'P-01',date:'6 พ.ย. 2569',docs:'docs.google.com/… (ตัวอย่าง)',
+  text:'วัดของหมู่บ้านสร้างเมื่อ พ.ศ. 2510 ชาวบ้านร่วมกันสร้าง ก่อนหน้านั้นไปทำบุญที่วัดหมู่บ้านข้างเคียง (ข้อความตัวอย่าง)\n\nงานบุญใหญ่ของหมู่บ้านจัดทุกปีในเดือนสาม ทุกบ้านร่วมทำบุญ และมีการเลี้ยงอาหารที่ศาลาวัด (ข้อความตัวอย่าง)\n\nผู้ใหญ่บ้านเป็นประธานกองทุนหมู่บ้าน มี อสม. 18 คน และมีคณะกรรมการหมู่บ้านช่วยดูแลงานส่วนรวม (ข้อความตัวอย่าง)\n\nชาวบ้านส่วนใหญ่ไป รพ.สต. เมื่อเจ็บป่วยทั่วไป แต่บางคนยังไปหาหมอพื้นบ้านและใช้สมุนไพรร่วมด้วย (ข้อความตัวอย่าง)\n\nตระกูลใหญ่ในหมู่บ้านมีลูกหลานหลายรุ่นอยู่ในหมู่บ้านเดียวกัน แต่งงานกับคนในหมู่บ้านข้างเคียง (ข้อความตัวอย่าง)\n\nบ้านผู้ใหญ่อยู่ใกล้ศาลาประชาคม ติดถนนสายหลัก มีหนองน้ำอยู่ด้านทิศตะวันตก (ข้อความตัวอย่าง)'});
+ var B=addNote({by:'สมาชิก ข.',at:'6 พ.ย. 2569 15:40',title:'เดินสำรวจตอนเช้า (ตัวอย่าง)',method:METHODS[2],informant:'',date:'6 พ.ย. 2569',photos:[samplePhoto('จุดทิ้งขยะ',10)],
+  text:'มีจุดทิ้งขยะริมถนนทางเข้าหมู่บ้านด้านทิศเหนือ น้ำเสียจากบ้านไหลลงหนองน้ำ (ข้อความตัวอย่าง)\n\nบ้านร้างมีหลายหลังในคุ้มที่ 2 และมีร้านค้าเล็กๆ 4 ร้านกระจายในหมู่บ้าน (ข้อความตัวอย่าง)\n\nลำห้วยใช้ทำนา ไม่มีการแบ่งน้ำชัดเจน คนที่มีนาใกล้ห้วยสูบน้ำใช้ (ข้อความตัวอย่าง)'});
+ var D=addNote({by:'สมาชิก ก.',at:'7 พ.ย. 2569 09:10',title:'คุยกับ อสม. สองคน (ตัวอย่าง)',method:METHODS[1],informant:'P-02, P-03',date:'7 พ.ย. 2569',
+  text:'ทุกวันศุกร์ อสม. ออกสำรวจลูกน้ำยุงลายในหมู่บ้านช่วงฤดูฝน และแจกทรายอะเบท (ข้อความตัวอย่าง)\n\nฉีดวัคซีนไข้หวัดใหญ่ทุกเดือนกันยายน และคัดกรองเบาหวานความดันปีละครั้ง (ข้อความตัวอย่าง)\n\nปี 2555 ไฟฟ้าเข้าหมู่บ้านครั้งแรก ต่อมาถนนลาดยางสร้างเสร็จ (ข้อความตัวอย่าง)\n\nในอดีตมีกลุ่มทอผ้าแต่ปัจจุบันเลิกทำแล้ว สมาชิกส่วนใหญ่ย้ายไปทำนา (ข้อความตัวอย่าง)\n\nอสม. บอกว่าเรื่องรายได้ครัวเรือนต่างกับที่ผู้ใหญ่บ้านเล่า (ข้อความตัวอย่าง)'});
+ function S(n,i){return snips.filter(function(s){return s.noteId===n.id})[i]}
+ function T(n,i,tags,stt){var s=S(n,i);tags.forEach(function(w){setTag(s,w,true,true)});if(stt)for(var k in stt)s.st[k]=stt[k];return s}
+ T(A,0,[6,3],{6:'pick',3:'checked'}).loc=[C[0]+.0002,C[1]+.0019];
+ T(A,1,[5,3],{5:'pick'});
+ T(A,2,[3],{3:'checked'}).reportName='ผู้ใหญ่บ้าน (ใช้ตำแหน่งแทนชื่อ)';
+ T(A,3,[4]);T(A,4,[2]);
+ S(A,5).loc=[C[0]+.0003,C[1]-.0004];
+ T(B,0,[1,4],{1:'pick'}).loc=[C[0]+.0021,C[1]-.0003];
+ T(B,1,[1]);
+ S(B,2).loc=[C[0]+.0027,C[1]-.0010];
+ T(D,0,[4]);T(D,1,[4,5]);T(D,2,[6],{6:'checked'});T(D,3,[3,6],{3:'skip',6:'checked'});
+ T(D,4,[3],{3:'checked'}).flag=true;
+ // โน้ตตัวอย่างที่พูดถึงบ้านเลขที่และชื่อคน (ชื่อสมมติทั้งหมด) ไว้ดูระบบเสนอให้ผูก
+ var E=addNote({by:'สมาชิก ค.',at:'7 พ.ย. 2569 11:05',title:'เยี่ยมบ้านหลายหลัง (ตัวอย่าง)',method:METHODS[0],informant:'P-04',date:'7 พ.ย. 2569',
+  text:'คุยกับป้าสมศรี ที่บ้านเลขที่ '+HN[3]+' เล่าว่าเมื่อก่อนน้ำจากหนองน้ำท่วมถึงหน้าบ้านทุกปี ตอนนี้ไม่ท่วมแล้ว (ข้อความตัวอย่าง)\n\nลุงบุญมี บ้านเลขที่ '+HN[1]+' เป็นหมอสมุนไพรของหมู่บ้าน คนแก่ในคุ้มมาหาเวลาปวดเมื่อย (ข้อความตัวอย่าง)\n\nป้าสมศรีเป็นญาติกับลุงบุญมี ลูกหลานแต่งงานกับคนหมู่บ้านข้างเคียง (ข้อความตัวอย่าง)\n\nผู้ใหญ่สมชายเล่าว่ากองทุนหมู่บ้านตั้งปี 2540 มีสมาชิกเกือบทุกบ้าน (ข้อความตัวอย่าง)'});
+ T(E,0,[6]);T(E,1,[4],{4:'pick'});T(E,2,[2]);T(E,3,[3],{3:'pick'});
+ var hs=feats.filter(function(f){return f.kind==='house'&&f.no});if(hs[2])S(A,5).fids=[hs[2].id];var tp=feats.filter(function(f){return f.kind==='temple'})[0];if(tp){S(A,0).fids=[tp.id];S(A,1).fids=[tp.id]}
+ function mkP(name,alias,aka,house,note){var p=newPerson(name);p.alias=alias;p.aka=aka;p.house=house;p.note=note;p.by='สมาชิก ค.';p.at='7 พ.ย. 2569 11:10';return p}
+ var P1=mkP('ป้าสมศรี ใจงาม','ส.','',HN[3],'ชื่อสมมติ ตัวอย่าง'),P2=mkP('ลุงบุญมี ทองดี','','หมอบุญ',HN[1],'ชื่อสมมติ ตัวอย่าง (ยังไม่ตั้งตัวย่อ ไว้ดูคำเตือน)'),P3=mkP('ผู้ใหญ่สมชาย รักถิ่น','ผู้ใหญ่บ้าน','',HN[2],'ชื่อสมมติ ตัวอย่าง');
+ var h3=feats.filter(function(f){return f.kind==='house'&&f.no===HN[3]})[0];S(E,0).pids=[P1.id];if(h3)S(E,0).fids=[h3.id];
+}
+try{var sv=JSON.parse(localStorage.getItem(KEY)||'null');if(sv&&sv.notes&&sv.snips){notes=sv.notes;snips=sv.snips;feats=sv.feats||[];people=sv.people||[]}else seed()}catch(e){seed()}
+(function(){var q=location.search,m;if(m=q.match(/role=(\w+)/))st.role=m[1];if(m=q.match(/wi=(\d)/)){st.lead=+m[1];st.tw=+m[1];st.ow=+m[1]}if(m=q.match(/view=(\w+)/))st.view=m[1];if(m=q.match(/ow=(\d)/))st.ow=+m[1];if(m=q.match(/tw=(\d)/))st.tw=+m[1]})();
+
+// ============ นำทาง ============
+function badge(){if(st.role==='lead')return snips.filter(function(s){return has(s,st.lead)&&stOf(s,st.lead)==='new'}).length;if(st.role==='admin')return snips.filter(function(s){return !s.wi.length}).length;return 0}
+function renderNav(){
+ var t=[['submit','✍️','ส่งข้อมูล'],['pool','🗂️','คลังกลาง'],['triage','📥','ถาดหัวหน้าวิถี'],['picks','⭐','ที่เลือกเก็บไว้'],['map','🗺️','แผนที่เดินดิน'],['people','👥','บุคคล']];
+ var b=badge();
+ $('nav').innerHTML=t.map(function(x){return '<button data-v="'+x[0]+'" class="'+(st.view===x[0]?'on':'')+'"><span class="ni">'+x[1]+'</span>'+x[2]+(x[0]==='triage'&&b?'<span class="b">'+b+'</span>':'')+'</button>'}).join('')}
+$('nav').onclick=function(e){var b=e.target.closest('button');if(b)go(b.dataset.v)};
+function go(v){var ch=st.view!==v;st.view=v;render();if(ch)$('view').scrollTop=0}
+var VIEWS={submit:function(){viewSubmit()},pool:function(){viewPool()},triage:function(){viewTriage()},picks:function(){viewPicks()},people:function(){viewPeople()}};
+function render(){
+ renderNav();closeModal();
+ var isMap=st.view==='map';$('v-map').style.display=isMap?'flex':'none';$('view').style.display=isMap?'none':'block';
+ if(isMap){initMap();drawMap();mapSide();setTimeout(function(){map.invalidateSize()},50);return}
+ VIEWS[st.view]()}
+
+// ============ ① ส่งข้อมูล ============
+function tagBoxes(cls,sel,dis){return [1,2,3,4,5,6].map(function(n){return tgl(cls,n,!!(sel&&sel.indexOf(n)>=0),dis)}).join('')}
+function viewSubmit(){
+ var h='<div class="wrap"><h2>ส่งข้อมูลเข้าคลังกลาง</h2><p class="muted">วางข้อความจาก Google Docs ได้เลย ไม่ต้องจัดให้เรียบร้อย ระบบแยกเป็นย่อหน้าให้ ถ้ายังไม่แน่ใจว่าเป็นวิถีไหน ปล่อยว่างได้ จะขึ้นว่า “ยังไม่ระบุวิถี” แล้วค่อยติดป้ายทีหลัง</p>';
+ if(!canTag())return $('view').innerHTML=h+'<div class="warnbox">บทบาทผู้ชมส่งข้อมูลไม่ได้</div></div>';
+ h+='<label class="l">ชื่อเรื่อง (ไม่บังคับ)</label><input class="f" id="sTitle" placeholder="เช่น คุยกับผู้ใหญ่บ้าน / เดินสำรวจคุ้ม 2">';
+ h+='<label class="l">ข้อความโน้ต *</label><textarea class="f" id="sTxt" rows="9" placeholder="วางข้อความจาก Google Docs ที่นี่ จะยาวหลายย่อหน้าหรือปนหลายวิถีก็ได้"></textarea>';
+ h+='<div class="grid2"><div><label class="l">ลิงก์ Google Docs ต้นฉบับ (ไม่บังคับ)</label><input class="f" id="sDocs" placeholder="วางลิงก์เพื่อย้อนกลับไปดูต้นฉบับ"></div><div><label class="l">รหัสผู้ให้ข้อมูล (ไม่ใช้ชื่อจริง)</label><input class="f" id="sInf" placeholder="เช่น P-07 หรือ ตัวย่อ"></div>';
+ h+='<div><label class="l">วิธีเก็บข้อมูล *</label><select class="f" id="sMethod">'+METHODS.map(function(m){return '<option>'+m+'</option>'}).join('')+'</select></div><div><label class="l">วันที่เก็บข้อมูล</label><input class="f" id="sDate" value="'+esc(today())+'"></div></div>';
+ h+='<label class="l">ป้ายวิถี (ไม่บังคับ · ติดได้หลายวิถี · ใช้กับทุกย่อหน้าของโน้ตนี้)</label><div>'+tagBoxes('stg')+'</div>';
+ h+='<label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-top:10px"><input type="checkbox" id="sSplit" checked>แยกเป็นข้อมูลย่อยตามย่อหน้า</label>';
+ h+='<label class="l">แนบรูป (เช่น รูปโน้ตกระดาษ รูปสถานที่)</label><input type="file" id="sPh" accept="image/*" multiple>';
+ h+='<h3>ตัวอย่างผลการแยก <span class="muted" id="prevN"></span></h3><div id="prev" class="muted">พิมพ์หรือวางข้อความด้านบนเพื่อดูตัวอย่าง</div>';
+ h+='<div class="bar"><button class="primary" id="sSend">ส่งเข้าคลังกลาง</button></div></div>';
+ $('view').innerHTML=h;
+ function prev(){var t=$('sTxt').value.trim();if(!t){$('prev').innerHTML='พิมพ์หรือวางข้อความด้านบนเพื่อดูตัวอย่าง';$('prevN').textContent='';return}
+  var list=$('sSplit').checked?paras(t):[t];$('prevN').textContent='('+list.length+' ข้อมูลย่อย)';
+  $('prev').innerHTML=list.map(function(p,i){var hm=housesMentioned(p).map(function(no){var ok=feats.some(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===no});return '<span class="lk" title="'+(ok?'มีหมุดบ้านเลขที่นี้บนแผนที่':'ยังไม่มีหมุดบ้านเลขที่นี้')+'">🏠 '+esc(no)+(ok?' ✓':' (ยังไม่มีหมุด)')+'</span>'}).join('');var pm=peopleMentions(p).map(function(x){return '<span class="lk p">👤 '+esc(x.name)+'</span>'}).join('');return '<div class="item">'+(i+1)+'. '+esc(p.length>130?p.slice(0,130)+'…':p)+((hm||pm)?'<div class="chips" style="margin-top:4px">'+hm+pm+'</div>':'')+'</div>'}).join('')+(list.some(function(p){return housesMentioned(p).length||peopleMentions(p).length})?'<div class="muted" style="margin-top:6px">💡 พบบ้านเลขที่หรือชื่อคนในข้อความ หลังส่งแล้วระบบจะเสนอปุ่มให้ผูก คุณกดยืนยันเอง ไม่ผูกให้อัตโนมัติ</div>':'')}
+ ['sTxt','sSplit'].forEach(function(id){$(id).addEventListener('input',prev);$(id).addEventListener('change',prev)});
+ $('sSend').onclick=function(){
+  var txt=$('sTxt').value.trim();if(!txt)return toast('วางหรือพิมพ์ข้อความก่อน');
+  var tags=[].filter.call(document.querySelectorAll('.stg'),function(x){return x.checked}).map(function(x){return +x.value});
+  readPhotos($('sPh').files,function(ph){
+   var n={id:uid('N'),by:me(),at:now(),title:$('sTitle').value.trim(),text:txt,docs:$('sDocs').value.trim(),method:$('sMethod').value,informant:$('sInf').value.trim(),date:$('sDate').value.trim(),photos:ph};
+   notes.unshift(n);var before=snips.length;makeSnips(n,tags,$('sSplit').checked);save();
+   toast('ส่งแล้ว แยกเป็น '+(snips.length-before)+' ข้อมูลย่อย'+(tags.length?'':' (ยังไม่ระบุวิถี)'));st.f={wi:0,status:'',q:'',flag:false,multi:false};go('pool')})}
+}
+
+// ============ ② คลังกลาง ============
+function stripe(s){if(!s.wi.length)return '#d9b54a';if(s.wi.length===1)return WC[s.wi[0]];return 'linear-gradient(180deg,'+s.wi.map(function(w){return WC[w]}).join(',')+')'}
+function quickTags(s){return canTag()?'<div class="qt"><span class="muted">ติดป้าย:</span>'+[1,2,3,4,5,6].map(function(w){var on=has(s,w);return '<button data-a="tg" data-id="'+s.id+'" data-w="'+w+'" class="'+(on?'on':'')+'" style="'+(on?'background:'+WC[w]:'color:'+WC[w])+'" title="'+esc(WI[w])+'">'+w+'</button>'}).join('')+'</div>':''}
+function card(s){var n=noteOf(s),sg=suggest(s),lk=linkChips(s,false);
+ return '<div class="card" data-open="'+s.id+'" style="--stripe:'+stripe(s)+'"><div class="chips">'+tagChips(s)+(s.flag?'<span class="pill warn">ขัดกัน?</span>':'')+(s.loc?'<span title="มีตำแหน่งบนแผนที่">📍</span>':'')+(n.photos.length?'<span>📷</span>':'')+'</div><div class="txt">'+esc(s.text)+'</div>'+((lk||sg.n)?'<div class="chips">'+lk+(sg.n?'<span class="sugg" title="ระบบพบบ้านเลขที่ ชื่อคน หรือชื่อสถานที่ในข้อความ เปิดข้อมูลแล้วกดยืนยันผูกได้">💡 เสนอให้ผูก '+sg.n+'</span>':'')+'</div>':'')+quickTags(s)+'<small style="display:block;margin-top:7px">'+esc(n.method)+' · '+esc(n.informant||'ไม่ระบุผู้ให้ข้อมูล')+' · '+esc(n.date)+' · โดย '+esc(n.by)+'</small></div>'}
+function viewPool(){
+ var f=st.f;
+ var h='<div class="wrap"><div class="pagehead"><div><h2>คลังข้อมูลกลาง</h2><p class="muted" style="margin:0">ข้อมูลย่อยจากโน้ตของทุกคน ติดป้ายได้หลายวิถี (กดเลข 1–6 ใต้ข้อความ) ถ้ายังไม่ติดจะขึ้น “ยังไม่ระบุวิถี” ทุกคนเพิ่มหรือเอาป้ายออกได้ มีประวัติและกดเลิกทำได้ กดที่ข้อความเพื่อเปิดดูต้นฉบับ</p></div></div><div class="stats" id="pStats"></div>';
+ h+='<div class="filters"><div class="fchips" id="pChips"></div><div class="bar" style="margin:6px 0 0"><select id="fSt"><option value="">ทุกสถานะ</option>'+STORD.map(function(k){return '<option value="'+k+'"'+(f.status===k?' selected':'')+'>'+STAT[k]+'</option>'}).join('')+'</select>';
+ h+='<input id="fQ" placeholder="ค้นข้อความ ชื่อคน เลขที่บ้าน ผู้ให้ข้อมูล" value="'+esc(f.q)+'" style="flex:1;min-width:180px"><label style="font-size:13px"><input type="checkbox" id="fM"'+(f.multi?' checked':'')+'> เฉพาะที่ติดหลายวิถี</label><label style="font-size:13px"><input type="checkbox" id="fF"'+(f.flag?' checked':'')+'> เฉพาะที่ติดธง</label></div></div><div id="pList"></div></div>';
+ $('view').innerHTML=h;
+ function chips(){var cnt={'0':snips.length,'-1':snips.filter(function(s){return !s.wi.length}).length};[1,2,3,4,5,6].forEach(function(n){cnt[n]=snips.filter(function(s){return has(s,n)}).length});
+  var a=[[0,'ทั้งหมด','#17614a'],[-1,'ยังไม่ระบุวิถี','#b8941f']].concat([1,2,3,4,5,6].map(function(n){return [n,n+' '+WI[n],WC[n]]}));
+  $('pChips').innerHTML=a.map(function(x){return '<button class="fc'+(f.wi===x[0]?' on':'')+'" style="--c:'+x[2]+'" data-fw="'+x[0]+'">'+x[1]+'<i>'+cnt[x[0]]+'</i></button>'}).join('')}
+ function fill(){
+  f.status=$('fSt').value;f.q=$('fQ').value.trim();f.multi=$('fM').checked;f.flag=$('fF').checked;
+  var qp=qparse(f.q);
+  var list=snips.filter(function(s){
+   if(f.wi===-1&&s.wi.length)return false;if(f.wi>0&&!has(s,f.wi))return false;
+   if(f.status){var ok=f.wi>0?stOf(s,f.wi)===f.status:s.wi.some(function(w){return stOf(s,w)===f.status});if(!ok)return false}
+   if(f.multi&&s.wi.length<2)return false;if(f.flag&&!s.flag)return false;
+   if(qp.qn&&!snipSearch(s,qp))return false;return true});
+  $('pStats').innerHTML='<div class="stat"><b>'+snips.length+'</b>ข้อมูลย่อย</div><div class="stat"><b>'+snips.filter(function(s){return !s.wi.length}).length+'</b>ยังไม่ระบุวิถี</div><div class="stat"><b>'+snips.filter(function(s){return s.wi.length>1}).length+'</b>ติดหลายวิถี</div><div class="stat"><b>'+snips.filter(function(s){return s.wi.some(function(w){return stOf(s,w)==='pick'})}).length+'</b>มีวิถีเลือกเก็บไว้</div><div class="stat"><b>'+notes.length+'</b>โน้ตต้นฉบับ</div>';
+  chips();
+  $('pList').innerHTML=list.length?'<div class="muted">แสดง '+list.length+' จาก '+snips.length+' รายการ</div>'+list.map(card).join(''):'<div class="empty"><span class="em">🔎</span>ไม่พบรายการที่ตรงกับตัวกรอง</div>'}
+ $('pChips').onclick=function(e){var b=e.target.closest('[data-fw]');if(b){f.wi=+b.dataset.fw;fill()}};
+ ['fSt','fM','fF'].forEach(function(id){$(id).onchange=fill});$('fQ').oninput=fill;fill()}
+
+// ============ รายละเอียดข้อมูลย่อย (หน้าต่างลอย) ============
+function closeModal(){$('modal').style.display='none'}
+$('modal').addEventListener('click',function(e){if(e.target===$('modal'))closeModal()});
+function tgl(cls,w,on,dis){return '<label class="tgl'+(on?' on':'')+(dis?' dis':'')+'" style="--c:'+WC[w]+'"><input type="checkbox" class="'+cls+'" value="'+w+'"'+(on?' checked':'')+(dis?' disabled':'')+'>'+w+' '+WI[w]+'</label>'}
+document.addEventListener('change',function(e){var t=e.target;if(t&&t.type==='checkbox'&&t.parentNode&&t.parentNode.classList&&t.parentNode.classList.contains('tgl'))t.parentNode.classList.toggle('on',t.checked)});
+function openSnip(id){
+ var s=snipOf(id);if(!s)return;var n=noteOf(s);var et=canEditText(s);var dis=et?'':' disabled';var sg=suggest(s);
+ var h='<div class="mhead"><div><b style="font-size:16px">ข้อมูลย่อย</b> <span class="muted">'+esc(s.id)+' · โดย '+esc(n.by)+'</span></div><button data-m="close" class="x" title="ปิด (Esc)">✕</button></div>';
+ h+='<div class="chips" style="margin:4px 0">'+tagChips(s)+(s.flag?'<span class="pill warn">ขัดกัน?</span>':'')+'</div>';
+ h+='<label class="l">ข้อความ</label><textarea class="f" id="mTxt" rows="4"'+dis+'>'+esc(s.text)+'</textarea>';
+ if(!et&&canTag())h+='<div class="muted">แก้ข้อความได้เฉพาะเจ้าของโน้ตหรือผู้ดูแล</div>';
+ h+='<h3>ป้ายวิถี <span class="muted" style="font-weight:400">ติดได้หลายวิถี'+(canTag()?' · ทุกคนเพิ่ม/เอาป้ายออกได้ มีประวัติและเลิกทำได้':'')+'</span></h3><div>'+[1,2,3,4,5,6].map(function(w){return tgl('mtg',w,has(s,w),!canTag())}).join('')+'</div>';
+ if(s.wi.length>=4)h+='<div class="warnbox">ติดป้ายถึง '+s.wi.length+' วิถี ลองตัดข้อความเป็นข้อมูลย่อยแยกกัน (ใช้ปุ่ม ✂ ด้านล่าง) จะช่วยให้แต่ละวิถีเห็นเฉพาะส่วนของตัวเอง</div>';
+ if(s.wi.length){h+='<h3>สถานะของแต่ละวิถี <span class="muted" style="font-weight:400">แต่ละวิถีตัดสินของตัวเอง</span></h3>'+s.wi.map(function(w){var ok=canTriageW(w);return '<div class="item" style="padding:6px 0"><div class="chips">'+wiChip(w)+STORD.map(function(k){return '<button data-m="st" data-w="'+w+'" data-k="'+k+'" class="'+(stOf(s,w)===k?'primary':'')+'"'+(ok?'':' disabled')+'>'+STAT[k]+'</button>'}).join('')+'</div></div>'}).join('')+'<div class="muted">เปลี่ยนสถานะได้เฉพาะหัวหน้าวิถีนั้นหรือผู้ดูแล</div>'}
+ // ---- การเชื่อมโยง ----
+ h+='<h3>เชื่อมโยงกับบ้าน / จุดบนแผนที่ / บุคคล</h3>';
+ var lc=linkChips(s,canTag());h+=lc?'<div class="chips">'+lc+'</div>':'<div class="muted">ยังไม่ผูกกับอะไร</div>';
+ if(sg.n){h+='<div class="sug"><b>💡 ระบบพบในข้อความนี้</b> (ยังไม่ผูก · ให้คุณตัดสินใจ)<div>'+sg.houses.map(function(f){return '<button data-m="link" data-fid="'+f.id+'">🏠 บ้านเลขที่ '+esc(f.no)+'</button>'}).join('')+sg.places.map(function(f){return '<button data-m="link" data-fid="'+f.id+'">'+featIcon(f)+esc(featLabel(f))+'</button>'}).join('')+sg.people.map(function(p){return '<button data-m="plink" data-pid="'+p.id+'">👤 '+esc(p.name)+'</button>'}).join('')+'</div>'+(canTag()&&sg.n>1?'<div style="margin-top:6px"><button class="primary" data-m="linkall">ผูกทั้งหมดที่พบ ('+sg.n+')</button></div>':'')+'</div>'}
+ if(sg.nohouse.length)h+='<div class="muted">ข้อความพูดถึงบ้านเลขที่ '+sg.nohouse.map(esc).join(', ')+' แต่ยังไม่มีหมุดบ้านเลขที่นี้บนแผนที่</div>';
+ if(canTag())h+='<input class="f" id="mLinkQ" placeholder="ค้นหาบ้านเลขที่ ชื่อจุด หรือชื่อคน เพื่อผูก เช่น 21 หรือ สมศรี" style="margin-top:8px"><div id="mLinkRes" style="margin-top:4px"></div>';
+ h+='<label class="l">ชื่อที่ใช้ในรายงาน (ตัวย่อ/ตำแหน่ง แทนชื่อจริง)</label><input class="f" id="mRn" value="'+esc(s.reportName)+'"'+(canTag()?'':' disabled')+' placeholder="เช่น ผู้ใหญ่บ้าน, นาย ส. ก.">';
+ h+='<div class="bar">'+(canTag()?'<button class="primary" data-m="save">บันทึก</button><button data-m="flag">'+(s.flag?'ยกเลิกธงขัดกัน':'ติดธง “ขัดกัน/ต้องตรวจ”')+'</button><button data-m="pin">'+(s.loc?'📍 ย้ายตำแหน่งบนแผนที่':'📍 ปักตำแหน่งบนแผนที่')+'</button>':'')+'</div>';
+ if((s.hist||[]).length)h+='<h3>ประวัติ</h3><div class="muted">'+s.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
+ h+='<h3>ที่มา</h3><div class="muted">'+esc(n.method)+' · ผู้ให้ข้อมูล: '+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.date)+' · บันทึกโดย '+esc(n.by)+' ('+esc(n.at)+')'+(n.docs?' · ต้นฉบับ: '+esc(n.docs):'')+'</div>';
+ if(n.photos.length)h+='<div class="ph">'+n.photos.map(function(p){return '<img src="'+p+'" alt="รูป">'}).join('')+'</div>';
+ h+='<h3>ต้นฉบับทั้งโน้ต'+(n.title?' · '+esc(n.title):'')+'</h3><div class="muted">ลากคลุมข้อความด้านล่างแล้วกดปุ่มเพื่อตัดเป็นข้อมูลย่อยใหม่ (ข้อมูลใหม่จะขึ้น “ยังไม่ระบุวิถี” ให้ติดป้ายเอง)</div>';
+ var raw=esc(n.text);if(s.text&&n.text.indexOf(s.text)>=0)raw=esc(n.text).replace(esc(s.text),'<mark>'+esc(s.text)+'</mark>');
+ h+='<div class="raw" id="rawTxt" style="margin-top:6px">'+raw+'</div>';
+ h+='<div class="bar">'+(canTag()?'<button data-m="cut">✂ ตัดข้อความที่เลือกเป็นข้อมูลย่อย</button>':'')+'</div>';
+ $('mbody').dataset.kind='s';$('mbody').dataset.id=id;$('mbody').innerHTML=h;$('modal').style.display='flex'}
+function refreshAfter(reopen){var v=st.view;renderNav();if(v==='map'){drawMap();mapSide()}else VIEWS[v]();if(reopen)openSnip(reopen);else closeModal()}
+$('mbody').addEventListener('click',function(e){
+ if($('mbody').dataset.kind!=='s')return;
+ var b=e.target.closest('[data-m]');if(!b)return;var s=snipOf($('mbody').dataset.id);if(!s)return;var a=b.dataset.m;
+ if(a==='close')return closeModal();
+ if(a==='save'){if(canEditText(s))s.text=$('mTxt').value.trim()||s.text;s.reportName=$('mRn').value.trim();save();toast('บันทึกแล้ว');return refreshAfter()}
+ if(a==='flag'){s.flag=!s.flag;save();return refreshAfter(s.id)}
+ if(a==='pin'){st.pick=s.id;closeModal();st.view='map';render();return toast('แตะบนแผนที่ตรงตำแหน่งของข้อมูลนี้')}
+ if(a==='st'){var w=+b.dataset.w;if(!canTriageW(w))return;s.st[w]=b.dataset.k;save();toast('วิถี '+w+': “'+STAT[b.dataset.k]+'”');return refreshAfter(s.id)}
+ if(a==='link'){var f1=featOf(b.dataset.fid);addTo(s,'fids',b.dataset.fid,featLabel(f1));save();toast('ผูกกับ '+featLabel(f1)+' แล้ว');return refreshAfter(s.id)}
+ if(a==='plink'){var p1=personOf(b.dataset.pid);addTo(s,'pids',p1.id,p1.name);save();toast('ผูกกับ '+p1.name+' แล้ว');return refreshAfter(s.id)}
+ if(a==='unlink'){var f2=featOf(b.dataset.fid);delFrom(s,'fids',b.dataset.fid,f2?featLabel(f2):'');save();return refreshAfter(s.id)}
+ if(a==='punlink'){var p2=personOf(b.dataset.pid);delFrom(s,'pids',b.dataset.pid,p2?p2.name:'');save();return refreshAfter(s.id)}
+ if(a==='linkall'){var g=suggest(s);g.houses.concat(g.places).forEach(function(f){addTo(s,'fids',f.id,featLabel(f))});g.people.forEach(function(p){addTo(s,'pids',p.id,p.name)});save();toast('ผูกครบแล้ว');return refreshAfter(s.id)}
+ if(a==='pnew'){var np=newPerson(b.dataset.name);addTo(s,'pids',np.id,np.name);save();toast('สร้างบุคคล “'+np.name+'” และผูกแล้ว (เติมตัวย่อได้ที่หน้า บุคคล)');return refreshAfter(s.id)}
+ if(a==='gofeat')return goFeat(b.dataset.fid);
+ if(a==='gop')return openPerson(b.dataset.pid);
+ if(a==='cut'){var sel=window.getSelection();var t=(sel&&sel.toString()||'').trim();var raw=$('rawTxt');if(!t||!sel.rangeCount||!raw.contains(sel.anchorNode))return toast('ลากคลุมข้อความในกล่อง “ต้นฉบับทั้งโน้ต” ก่อน');
+  var o=newSnip(noteOf(s),t,[]);save();toast('ตัดเป็นข้อมูลย่อยใหม่แล้ว (ยังไม่ระบุวิถี)');return refreshAfter(o.id)}
+});
+$('mbody').addEventListener('change',function(e){var t=e.target;if($('mbody').dataset.kind==='s'&&t.classList&&t.classList.contains('mtg')){var s=snipOf($('mbody').dataset.id);var w=+t.value;setTag(s,w,t.checked);save();refreshAfter(s.id);if(!t.checked)toast('เอาป้ายวิถี '+w+' ออกแล้ว',function(){setTag(s,w,true);save();refreshAfter(s.id)})}});
+$('mbody').addEventListener('input',function(e){if(e.target.id!=='mLinkQ')return;var s=snipOf($('mbody').dataset.id);if(!s)return;var q=e.target.value.trim(),qp=qparse(q),out='';
+ if(qp.qn){
+  var fr=feats.map(function(f){return {f:f,sc:featScore(f,qp)}}).filter(function(x){return x.sc>0&&(s.fids||[]).indexOf(x.f.id)<0}).sort(function(a,b){return b.sc-a.sc}).slice(0,6);
+  var pr=pLive().filter(function(p){return personHit(p,qp)&&(s.pids||[]).indexOf(p.id)<0}).slice(0,5);
+  out=fr.map(function(x){return '<button data-m="link" data-fid="'+x.f.id+'" style="margin:3px 4px 0 0">'+featIcon(x.f)+esc(featLabel(x.f))+'</button>'}).join('')+pr.map(function(p){return '<button data-m="plink" data-pid="'+p.id+'" style="margin:3px 4px 0 0">👤 '+esc(p.name)+'</button>'}).join('');
+  if(q.length>=2&&!qp.isNo&&!pLive().some(function(p){return tnorm(p.name)===qp.qn}))out+='<button data-m="pnew" data-name="'+esc(q)+'" style="margin:3px 4px 0 0">＋ สร้างบุคคล “'+esc(q)+'”</button>';
+  if(!out)out='<span class="muted">ไม่พบ</span>'}
+ $('mLinkRes').innerHTML=out});
+
+// ============ คลิกในหน้าหลัก ============
+$('view').addEventListener('click',function(e){
+ var b=e.target.closest('[data-a]');
+ if(!b){if(e.target.closest('button,select,input'))return;var pe=e.target.closest('[data-pp]');if(pe)return openPerson(pe.dataset.pp);var c=e.target.closest('[data-open]');if(c)openSnip(c.dataset.open);return}
+ var a=b.dataset.a,s=b.dataset.id?snipOf(b.dataset.id):null,w=+b.dataset.w;
+ if(a==='padd')return openPerson('new');
+ if(a==='prestore'){var rp=personOf(b.dataset.id);if(rp){rp.hidden=false;rp.hist.push('กู้คืน · '+me()+' · '+now());save();viewPeople()}return}
+ if(a==='tg'&&s){var on=has(s,w);setTag(s,w,!on);save();renderNav();VIEWS[st.view]();
+  if(on)toast('เอาป้ายวิถี '+w+' ออกแล้ว'+(stOf(s,w)==='pick'?' (วิถีนี้เคยเลือกเก็บไว้ จำสถานะไว้ให้)':''),function(){setTag(s,w,true);save();renderNav();VIEWS[st.view]()});
+  else if(s.wi.length>=4)toast('ติดป้ายถึง '+s.wi.length+' วิถีแล้ว ลองตัดข้อความให้แยกกัน');return}
+ if(a==='tw'){st.tw=w;return viewTriage()}
+ if(a==='ow'){st.ow=w;return viewPicks()}
+ if(a==='mv'&&s){var i=STORD.indexOf(stOf(s,w))+(+b.dataset.d);if(i<0||i>=STORD.length)return;s.st[w]=STORD[i];save();renderNav();return viewTriage()}
+ if(a==='untag'&&s){setTag(s,w,false);save();renderNav();viewTriage();return toast('เอาป้ายวิถี '+w+' ออกแล้ว',function(){setTag(s,w,true);save();renderNav();viewTriage()})}
+ if(a==='claim'&&s){setTag(s,w,true);save();toast('ติดป้ายวิถี '+w+' แล้ว');renderNav();return viewTriage()}
+ if(a==='back'&&s){s.st[w]='new';save();renderNav();return viewPicks()}
+ if(a==='copy'||a==='dl'){var t=exportText(st.ow);if(a==='dl'){var x=document.createElement('a');x.href=URL.createObjectURL(new Blob(['﻿'+t],{type:'text/plain;charset=utf-8'}));x.download='wi'+st.ow+'_ที่เลือกเก็บไว้.txt';document.body.appendChild(x);x.click();x.remove()}else{try{navigator.clipboard.writeText(t).then(function(){toast('คัดลอกแล้ว')},function(){toast('คัดลอกไม่ได้ ใช้ปุ่มดาวน์โหลดแทน')})}catch(er){toast('คัดลอกไม่ได้ ใช้ปุ่มดาวน์โหลดแทน')}}return}
+ if(a==='reset'){seed();save();toast('รีเซ็ตเป็นข้อมูลตัวอย่างแล้ว');return render()}
+});
+
+// ============ ③ ถาดหัวหน้าวิถี ============
+function viewTriage(){
+ var w=st.role==='lead'?st.lead:st.tw;if(st.role==='lead')st.tw=st.lead;
+ var h='<div class="wrap" style="max-width:1200px"><h2>ถาดหัวหน้าวิถี</h2><p class="muted">ข้อมูลย่อยทุกชิ้นที่ติดป้ายวิถีนี้อยู่ที่นี่ ทั้งที่คนอื่นติดป้ายมาและที่คาบเกี่ยวกับวิถีอื่น หัวหน้าวิถีดูทั้งหมดแล้วเลือกเก็บเองได้ สถานะเป็นของวิถีนี้เท่านั้น ไม่กระทบวิถีอื่น</p>';
+ h+='<div class="chips">'+[1,2,3,4,5,6].map(function(n){return '<span class="wi'+(n===w?'':' o')+'" style="'+(n===w?'background:':'color:')+WC[n]+';cursor:'+(st.role==='lead'?'default':'pointer')+'" data-a="tw" data-w="'+n+'">'+n+' '+WI[n]+'</span>'}).join('')+'</div>';
+ var mine=snips.filter(function(s){return has(s,w)});var perm=canTriageW(w);
+ if(!perm)h+='<div class="warnbox">คุณดูถาดของวิถีนี้ได้ แต่ย้ายสถานะไม่ได้ (ทำได้เฉพาะหัวหน้าวิถี '+w+' หรือผู้ดูแล)</div>';
+ h+='<div class="kan" style="margin-top:10px">'+STORD.map(function(k,ci){var col=mine.filter(function(s){return stOf(s,w)===k});
+  return '<div class="col" data-k="'+k+'"><h3>'+STAT[k]+' ('+col.length+')</h3>'+(col.map(function(s){var n=noteOf(s);
+   return '<div class="card" data-open="'+s.id+'" style="--stripe:'+stripe(s)+'"><div class="chips">'+(s.wi.length>1?'<span class="muted">ติดป้ายร่วมกับ</span>'+tagChips(s,w):'')+(s.flag?'<span class="pill warn">ขัดกัน?</span>':'')+'</div><div class="txt">'+esc(s.text)+'</div>'+(linkChips(s,false)?'<div class="chips">'+linkChips(s,false)+'</div>':'')+'<small>'+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.by)+'</small>'+(perm?'<div class="bar" style="margin:6px 0 0">'+(ci>0?'<button data-a="mv" data-d="-1" data-w="'+w+'" data-id="'+s.id+'">◀</button>':'')+(ci<3?'<button data-a="mv" data-d="1" data-w="'+w+'" data-id="'+s.id+'">▶ '+STAT[STORD[ci+1]]+'</button>':'')+(k==='new'?'<button data-a="untag" data-w="'+w+'" data-id="'+s.id+'">ไม่เกี่ยวกับวิถีนี้</button>':'')+'</div>':'')+'</div>'}).join('')||'<div class="muted">ว่าง</div>')+'</div>'}).join('')+'</div>';
+ var un=snips.filter(function(s){return !s.wi.length});
+ h+='<h3 style="margin-top:18px">ยังไม่ระบุวิถี ('+un.length+') · ถ้าเกี่ยวกับวิถี '+w+' กดติดป้ายได้เลย (ติดได้หลายวิถี)</h3>'+(un.length?un.map(function(s){var n=noteOf(s);return '<div class="card" data-open="'+s.id+'"><div class="txt">'+esc(s.text)+'</div><small>'+esc(n.by)+' · '+esc(n.method)+'</small>'+(canTag()?'<div class="bar" style="margin:6px 0 0"><button data-a="claim" data-w="'+w+'" data-id="'+s.id+'">ติดป้ายวิถี '+w+'</button></div>':'')+'</div>'}).join(''):'<div class="muted">ไม่มีรายการที่ยังไม่ระบุ</div>');
+ var gone=snips.filter(function(s){return !has(s,w)&&s.st&&s.st[w]});
+ if(gone.length)h+='<h3 style="margin-top:18px">ถูกเอาป้ายวิถีนี้ออก ('+gone.length+') · เคยมีสถานะไว้ กดติดป้ายกลับได้ สถานะเดิมยังอยู่</h3>'+gone.map(function(s){var n=noteOf(s);return '<div class="card" data-open="'+s.id+'"><div class="chips"><span class="pill">เดิม: '+STAT[s.st[w]]+'</span>'+tagChips(s)+'</div><div class="txt">'+esc(s.text)+'</div><small>'+esc(n.by)+'</small>'+(canTag()?'<div class="bar" style="margin:6px 0 0"><button data-a="claim" data-w="'+w+'" data-id="'+s.id+'">ติดป้ายวิถี '+w+' กลับ</button></div>':'')+'</div>'}).join('');
+ h+='</div>';
+ $('view').innerHTML=h}
+
+// ============ ④ ที่เลือกเก็บไว้ ============
+function picksOf(w){return snips.filter(function(s){return has(s,w)&&stOf(s,w)==='pick'})}
+function viewPicks(){
+ var w=st.role==='lead'?st.lead:st.ow;if(st.role==='lead')st.ow=st.lead;st.ow=w;
+ var list=picksOf(w),na=noAlias(list);
+ var h='<div class="wrap"><div class="pagehead"><div><h2>ที่เลือกเก็บไว้ · วิถี '+w+' '+esc(WI[w])+'</h2><p class="muted" style="margin:0">รายการที่หัวหน้าวิถีเลือกไว้ใช้เขียนรูปเล่ม ระบบรวมข้อความพร้อมที่มาให้ ไม่ได้จัดหัวข้อหรือเขียนแทน หัวหน้าวิถีนำไปเรียบเรียงเองตามที่เห็นควร</p></div></div>';
+ h+='<div class="fchips">'+[1,2,3,4,5,6].map(function(n){return '<button class="fc'+(n===w?' on':'')+'" style="--c:'+WC[n]+(st.role==='lead'&&n!==w?';opacity:.5;cursor:default':'')+'" data-a="ow" data-w="'+n+'">'+n+' '+WI[n]+'</button>'}).join('')+'</div>';
+ h+='<div class="stats"><div class="stat"><b>'+list.length+'</b>เลือกเก็บไว้</div><div class="stat"><b>'+snips.filter(function(s){return has(s,w)}).length+'</b>ทั้งหมดของวิถีนี้</div></div>';
+ if(na.length)h+='<div class="warnbox">⚠️ มีชื่อ '+na.map(function(p){return '“'+esc(p.name)+'”'}).join(', ')+' อยู่ในรายการที่เลือก แต่ยังไม่ตั้งตัวย่อ ตอนส่งออกระบบจะแทนด้วย “[ยังไม่ตั้งตัวย่อ]” ไปตั้งตัวย่อได้ที่หน้า “บุคคล”</div>';
+ h+='<div class="warnbox soft">ตอนคัดลอก/ดาวน์โหลด ระบบแทนชื่อบุคคลที่อยู่ในหน้า “บุคคล” ด้วยตัวย่อให้ ชื่อที่ไม่ได้อยู่ในหน้านั้นระบบตรวจไม่เจอ และไม่ปิดเลขที่บ้าน ควรอ่านทวนก่อนใส่รูปเล่ม</div>';
+ h+='<div class="bar"><label style="font-size:13px"><input type="checkbox" id="pkMask"'+(st.mask?' checked':'')+'> แสดงแบบปิดชื่อ (แบบเดียวกับที่ส่งออก)</label><span class="grow"></span><button data-a="copy">คัดลอกทั้งหมด</button><button data-a="dl">ดาวน์โหลด .txt</button><button data-a="reset" class="danger">รีเซ็ตข้อมูลตัวอย่าง</button></div>';
+ h+=list.length?list.map(function(s){var n=noteOf(s);var tx=st.mask?maskText(s.text):s.text;return '<div class="card" data-open="'+s.id+'" style="--stripe:'+stripe(s)+'"><div class="txt" style="-webkit-line-clamp:unset">'+esc(tx)+(s.reportName?'  [ใช้ในรายงานว่า: '+esc(s.reportName)+']':'')+'</div><div class="chips">'+(s.wi.length>1?'<span class="muted">ติดป้ายร่วมกับ</span>'+tagChips(s,w):'')+'</div><small style="display:block;margin-top:4px">'+esc(n.method)+' · '+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.date)+' · '+esc(n.by)+'</small>'+(canTriageW(w)?'<div class="bar" style="margin:6px 0 0"><button data-a="back" data-w="'+w+'" data-id="'+s.id+'">เอากลับไปที่ถาด</button></div>':'')+'</div>'}).join(''):'<div class="empty"><span class="em">⭐</span>ยังไม่มีรายการที่เลือกเก็บไว้<br>ไปเลือกที่หน้า “ถาดหัวหน้าวิถี”</div>';
+ h+='<div class="muted" style="margin-top:10px">ตัวเลขเชิงปริมาณจากแบบสอบถามที่ต้องใช้คู่กัน ต้นแบบนี้ยังไม่ดึงมาแสดง</div></div>';
+ $('view').innerHTML=h;$('pkMask').onchange=function(){st.mask=this.checked;viewPicks()}}
+function exportText(w){
+ var t='วิถี '+w+' '+WI[w]+' — ข้อมูลที่เลือกเก็บไว้ (ข้อมูลตัวอย่าง ยังไม่ใช่ข้อความรูปเล่ม · แทนชื่อบุคคลด้วยตัวย่อแล้ว)\r\n\r\n';var l=picksOf(w);if(!l.length)t+='(ยังไม่มีรายการที่เลือก)\r\n';
+ l.forEach(function(s){var n=noteOf(s);t+='- '+maskText(s.text)+(s.reportName?' [ใช้ในรายงานว่า: '+s.reportName+']':'')+'\r\n  [แหล่งที่มา: '+n.method+' · '+(n.informant||'ไม่ระบุ')+' · '+n.date+' · โดย '+n.by+' · รหัส '+s.id+(s.wi.length>1?' · ติดป้ายร่วมกับวิถี '+s.wi.filter(function(x){return x!==w}).join(', '):'')+']\r\n'});
+ return t}
+
+// ============ ⑤ แผนที่เดินดิน (แดชบอร์ด · ทุกคนปักหมุดและแก้ไขได้อิสระ) ============
+// จุดบนแผนที่ (feature) = "สิ่งที่อยู่ตรงนั้น" เช่น บ้านเลขที่ วัด หนองน้ำ ส่วนความรู้/ข้อความยาวๆ เป็นโน้ต (ข้อมูลย่อย) แล้วผูกเข้ากับจุด
+Object.keys(FK).forEach(function(k){st.fvis[k]=true});
+function rng(s){return function(){s=(s*1664525+1013904223)%4294967296;return s/4294967296}}
+function featLabel(f){return f.kind==='house'?'บ้านเลขที่ '+(f.no||'(ไม่มีเลขที่)'):(f.title||FK[f.kind].t)}
+function featOf(id){return feats.filter(function(f){return f.id===id})[0]}
+function seedFeats(){
+ feats=[];var r=rng(8),n=1;var au=['สมาชิก ก.','สมาชิก ข.','หัวหน้าวิถี 1','หัวหน้าเขต (ตัวอย่าง)'];
+ function add(o){o.id=uid('F');o.by=o.by||au[Math.floor(r()*au.length)];o.at='6 พ.ย. 2569 10:'+(10+Math.floor(r()*40));o.note=o.note||'';o.photos=o.photos||[];o.hist=['สร้างรายการ · '+o.by+' · '+o.at];o.title=o.title||'';o.no=o.no||'';o.iv=!!o.iv;o.hidden=false;feats.push(o);return o}
+ for(var i=0;i<42;i++){var s=r(),stt=s<.06?'nonum':s<.14?'unk':s<.2?'ruin':'ok';var no=(stt==='nonum'||stt==='unk')?'':String(n)+(r()<.15?'/'+(1+Math.floor(r()*3)):'');
+  add({kind:'house',no:no,status:stt,iv:stt==='ok'&&r()<.4,coords:[C[0]+(r()-.5)*.0034,C[1]+(r()-.5)*.0042]});n+=1+(r()<.3?1:0)}
+ var h3=feats.filter(function(f){return f.kind==='house'&&f.no})[3];if(h3){h3.photos=[samplePhoto('หน้าบ้าน',150)];h3.note='เจ้าของบ้านเป็นญาติกับอีกหลัง (ข้อความตัวอย่าง)'}
+ add({kind:'shop',title:'ร้านชำ (ตัวอย่าง)',coords:[C[0]+.0006,C[1]-.0007]});add({kind:'shop',title:'ร้านก๋วยเตี๋ยว (ตัวอย่าง)',coords:[C[0]-.0005,C[1]+.0004]});
+ add({kind:'temple',title:'วัด (ตัวอย่าง)',coords:[C[0]+.0002,C[1]+.0019],note:'ศูนย์กลางงานบุญ (ข้อความตัวอย่าง)',photos:[samplePhoto('วัด',30)]});
+ add({kind:'temple',title:'ศาลปู่ตา (ตัวอย่าง)',coords:[C[0]-.0014,C[1]-.0019],note:'ศาลตั้งอยู่ติดถนน (ข้อความตัวอย่าง)'});
+ var pond=[];for(var a=0;a<10;a++){pond.push([C[0]-.0012+.0008*Math.sin(a/10*6.283),C[1]-.0032+.0009*Math.cos(a/10*6.283)])}
+ add({kind:'water',title:'หนองน้ำ (ตัวอย่าง)',coords:pond,note:'ใช้ทำเกษตร (ข้อความตัวอย่าง)'});
+ add({kind:'stream',title:'ลำห้วย (ตัวอย่าง)',coords:[[C[0]+.0030,C[1]-.0035],[C[0]+.0027,C[1]-.0008],[C[0]+.0031,C[1]+.0012],[C[0]+.0028,C[1]+.0035]]});
+ add({kind:'green',title:'ป่าไผ่ (ตัวอย่าง)',coords:[[C[0]-.0021,C[1]+.0024],[C[0]-.0018,C[1]+.0033],[C[0]-.0027,C[1]+.0034],[C[0]-.0028,C[1]+.0025]]});
+ add({kind:'boundary',title:'ขอบเขตหมู่บ้าน (ตัวอย่าง)',coords:[[C[0]+.0021,C[1]-.0026],[C[0]+.0021,C[1]+.0027],[C[0]-.0023,C[1]+.0027],[C[0]-.0025,C[1]-.0010]]});
+ [['เลี้ยงไก่',.0010,.0012],['เลี้ยงวัว',-.0013,.0009],['โรงสีเก่า (อดีต)',.0003,-.0003]].forEach(function(x){add({kind:'livestock',title:x[0]+' (ตัวอย่าง)',coords:[C[0]+x[1],C[1]+x[2]]})});
+ add({kind:'person',title:'บ้านผู้ใหญ่บ้าน (ตัวอย่าง)',coords:[C[0]+.0001,C[1]+.0001]});add({kind:'person',title:'อสม. (ตัวอย่าง)',coords:[C[0]-.0009,C[1]+.0014]});
+ add({kind:'health',title:'หมอพื้นบ้าน (ตัวอย่าง)',coords:[C[0]-.0004,C[1]-.0017]});add({kind:'health',title:'จุดบริการสุขภาพ (ตัวอย่าง)',coords:[C[0]+.0016,C[1]+.0008]});
+ add({kind:'problem',title:'จุดทิ้งขยะ (ตัวอย่าง)',coords:[C[0]-.0016,C[1]-.0004],photos:[samplePhoto('ขยะ',10)]});
+ // ตัวอย่างเลขที่ซ้ำ เพื่อให้เห็นรายการ “ต้องตรวจ”
+ var hh=feats.filter(function(f){return f.kind==='house'&&f.no});if(hh.length>8){hh[8].no=hh[5].no}
+}
+
+var map=null,grp=null,tmp=null;
+function houseIcon(f,sel){var s=HS[f.status];var t=f.no||'?';var w=Math.max(22,t.length*8+8);return L.divIcon({className:'',html:'<div class="hl'+(f.iv?' iv':'')+(sel?' sel':'')+'" style="background:'+s.c+';color:'+s.f+';width:'+w+'px">'+esc(t)+'</div>',iconSize:[w,18],iconAnchor:[w/2,9]})}
+function pinIcon(k,sel){return L.divIcon({className:'',html:'<div class="pl'+(sel?' sel':'')+'" style="background:'+k.c+'">'+k.i+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}
+function noteIcon(s){var w=s.wi[0];return L.divIcon({className:'',html:'<div class="pin" style="background:'+(w?WC[w]:'#666')+'">'+(w||'?')+(s.wi.length>1?'+':'')+'</div>',iconSize:[24,24],iconAnchor:[12,12]})}
+function initMap(){
+ if(map)return;
+ map=L.map('map',{maxZoom:20}).setView(C,17);
+ var sat=L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:20,maxNativeZoom:18,attribution:'ภาพ: Esri, Maxar, Earthstar Geographics'}).addTo(map);
+ var osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'});
+ L.control.layers({'ภาพดาวเทียม':sat,'แผนที่ถนน':osm},null,{collapsed:true}).addTo(map);
+ grp=L.layerGroup().addTo(map);tmp=L.layerGroup().addTo(map);
+ var hint=document.createElement('div');hint.className='hint';hint.id='mhint';hint.innerHTML='<span id="mhtxt"></span> <button id="mhdone" style="display:none">เสร็จ</button> <button id="mhc">ยกเลิก</button>';$('map').appendChild(hint);
+ $('mhc').onclick=cancelMode;$('mhdone').onclick=finishDraw;
+ map.on('click',onMapClick);map.on('zoomend',function(){$('map').classList.toggle('small',map.getZoom()<17)})}
+function cancelMode(){st.pick=null;st.draw=null;if(st.quick)st.quick.on=false;st.pts=[];if(tmp)tmp.clearLayers();drawMap();mapSide()}
+function onMapClick(e){
+ var ll=[e.latlng.lat,e.latlng.lng];
+ if(st.pick){var s=snipOf(st.pick);if(s){s.loc=ll;save();toast('ปักตำแหน่งของโน้ตแล้ว')}st.pick=null;drawMap();mapSide();return}
+ if(st.quick&&st.quick.on){quickHouse(ll);return}
+ if(st.draw){var k=FK[st.draw.kind];
+  if(k.geom==='point'){var f=createFeat(st.draw.kind,ll);st.draw=null;st.fsel=f.id;st.mt='detail';drawMap();mapSide();return}
+  st.pts.push(ll);tmp.clearLayers();L.polyline(st.pts,{color:'#ffd23f',weight:3,dashArray:'4 4'}).addTo(tmp);st.pts.forEach(function(p){L.circleMarker(p,{radius:4,color:'#ffd23f',fillOpacity:1}).addTo(tmp)})}}
+function finishDraw(){var k=FK[st.draw.kind],min=k.geom==='line'?2:3;if(st.pts.length<min)return toast('ต้องมีอย่างน้อย '+min+' จุด');var f=createFeat(st.draw.kind,st.pts.slice());st.draw=null;st.pts=[];tmp.clearLayers();st.fsel=f.id;st.mt='detail';drawMap();mapSide()}
+function createFeat(kind,coords,extra){var f={id:uid('F'),kind:kind,title:kind==='house'?'':FK[kind].t+' ใหม่',no:'',status:'unk',iv:false,coords:coords,note:'',photos:[],by:me(),at:now(),hist:['สร้างรายการ · '+me()+' · '+now()],hidden:false};if(extra)for(var k in extra)f[k]=extra[k];feats.push(f);save();return f}
+function nextNo(no){var m=String(no).match(/^(\d+)$/);return m?String(+m[1]+1):''}
+function quickHouse(ll){
+ var no=$('qNo')?$('qNo').value.trim():st.quick.no;var stt=$('qSt')?$('qSt').value:st.quick.status;if(!no&&stt==='ok')stt='unk';
+ var dup=!!no&&feats.some(function(f){return !f.hidden&&f.kind==='house'&&f.no===no});
+ createFeat('house',ll,{no:no,status:stt});st.quick.no=nextNo(no);st.quick.status=stt;
+ toast(dup?'ปักบ้าน '+no+' แล้ว (เลขที่นี้มีอยู่แล้ว ซ้ำ ดูในรายการ “ต้องตรวจ”)':'ปักบ้าน '+(no||'ไม่มีเลขที่')+' แล้ว');
+ drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}}
+function selectFeat(id){st.fsel=id;st.mt='detail';drawMap();mapSide()}
+function flyTo(f){if(!map)return;if(FK[f.kind].geom==='point')map.flyTo(f.coords,19);else map.fitBounds(L.latLngBounds(f.coords))}
+function drawMap(){
+ if(!map)return;grp.clearLayers();
+ var active=!!(st.pick||(st.quick&&st.quick.on)||st.draw);
+ $('mhint').style.display=active?'flex':'none';$('mhdone').style.display=(st.draw&&FK[st.draw.kind].geom!=='point')?'inline-block':'none';
+ $('mhtxt').textContent=st.pick?'แตะบนแผนที่ตรงตำแหน่งของโน้ตนี้':(st.quick&&st.quick.on)?'โหมดปักบ้านต่อเนื่อง: แตะหลังคาบ้านแต่ละหลัง':st.draw?(FK[st.draw.kind].geom==='point'?'แตะบนแผนที่ตำแหน่งของ “'+FK[st.draw.kind].t+'”':'แตะทีละจุดเพื่อวาด “'+FK[st.draw.kind].t+'” แล้วกด เสร็จ'):'';
+ map.getContainer().style.cursor=active?'crosshair':'';
+ feats.forEach(function(f){
+  if(f.hidden||!st.fvis[f.kind])return;var k=FK[f.kind],sel=f.id===st.fsel,lay;
+  if(k.geom==='point'){lay=L.marker(f.coords,{icon:f.kind==='house'?houseIcon(f,sel):pinIcon(k,sel),draggable:canTag(),title:f.title||f.no});
+   lay.on('dragend',function(e){var p=e.target.getLatLng();f.coords=[p.lat,p.lng];f.hist.push('ย้ายตำแหน่ง · '+me()+' · '+now());save()})}
+  else if(k.geom==='line'){lay=L.polyline(f.coords,{color:k.c,weight:sel?7:4,opacity:.9})}
+  else{lay=L.polygon(f.coords,{color:k.c,weight:sel?4:2,fillColor:k.c,fillOpacity:k.fill,dashArray:f.kind==='boundary'?'6 5':null})}
+  lay.on('click',function(ev){if(active)return;L.DomEvent.stopPropagation(ev);selectFeat(f.id)});
+  lay.bindTooltip(esc(featLabel(f)),{direction:'top',offset:[0,-6]});lay.addTo(grp)});
+ if(st.fvis.notes)snips.filter(function(s){return s.loc&&(!st.mw||has(s,st.mw))}).forEach(function(s){var m=L.marker(s.loc,{icon:noteIcon(s)});m.on('click',function(){if(active)return;openSnip(s.id)});m.bindTooltip(esc(s.text.slice(0,50)+'…'));m.addTo(grp)});
+ $('map').classList.toggle('small',map.getZoom()<17)}
+
+// ---- แถบตัวเลข (Dashboard) ----
+function mapStats(){
+ var hs=feats.filter(function(f){return !f.hidden&&f.kind==='house'});var c={};Object.keys(HS).forEach(function(k){c[k]=hs.filter(function(h){return h.status===k}).length});
+ var iv=hs.filter(function(h){return h.iv}).length,others=feats.filter(function(f){return !f.hidden&&f.kind!=='house'}).length;
+ var nums={};hs.forEach(function(h){if(h.no)nums[h.no]=(nums[h.no]||0)+1});var dup=Object.keys(nums).filter(function(k){return nums[k]>1}).length;
+ var by={};feats.forEach(function(f){if(!f.hidden)by[f.by]=(by[f.by]||0)+1});var top=Object.keys(by).sort(function(a,b){return by[b]-by[a]}).slice(0,3).map(function(k){return esc(k)+' ('+by[k]+')'}).join(' · ');
+ var pct=Math.min(100,hs.length/TOTAL*100);
+ var h='<div class="tile" style="min-width:190px"><b>'+hs.length+' / '+TOTAL+'</b>บ้านที่ปักหมุดแล้ว ('+pct.toFixed(1)+'%)<div class="meter"><i style="width:'+pct+'%"></i></div><div class="muted">224 = ตามคู่มือ ยังไม่ยืนยัน</div></div>';
+ h+=Object.keys(HS).map(function(k){return '<div class="tile"><b>'+c[k]+'</b><span class="dot" style="background:'+HS[k].c+'"></span>'+HS[k].t+'</div>'}).join('');
+ h+='<div class="tile"><b>'+iv+'</b>ติ๊กสัมภาษณ์แล้ว</div><div class="tile"><b>'+others+'</b>สถานที่/จุดอื่น</div><div class="tile"><b'+(dup?' style="color:var(--bad)"':'')+'>'+dup+'</b>เลขที่ซ้ำ</div><div class="tile" style="min-width:200px"><b style="font-size:13px">ผู้ร่วมปักหมุด</b><span class="muted">'+(top||'—')+'</span></div>';
+ $('mapStats').innerHTML=h}
+
+// ---- แผงด้านข้าง 3 แท็บ ----
+function mapSide(){
+ var tabs=[['layers','ชั้นข้อมูล / เพิ่ม'],['detail','จุดที่เลือก'],['notes','โน้ตบนแผนที่']];
+ $('mtabs').innerHTML=tabs.map(function(x){return '<button data-mt="'+x[0]+'" class="'+(st.mt===x[0]?'on':'')+'">'+x[1]+'</button>'}).join('');
+ $('msBody').innerHTML=st.mt==='layers'?layersTab():st.mt==='detail'?detailTab():notesTab();
+ mapStats()}
+$('mtabs').addEventListener('click',function(e){var b=e.target.closest('[data-mt]');if(b){st.mt=b.dataset.mt;mapSide()}});
+function layersTab(){
+ var h='';
+ if(canTag()){
+  h+='<h3 style="margin-top:0">เพิ่มบนแผนที่</h3><div class="bar" style="margin:0"><select id="fKind" style="flex:1">'+Object.keys(FK).map(function(k){return '<option value="'+k+'">'+(FK[k].i?FK[k].i+' ':'')+FK[k].t+'</option>'}).join('')+'</select><button class="primary" data-fa="add">＋ เพิ่ม</button></div>';
+  var q=st.quick||(st.quick={on:false,no:'',status:'ok'});
+  h+='<div class="tile" style="margin-top:10px;width:100%"><b style="font-size:14px">โหมดปักบ้านต่อเนื่อง</b><div class="muted">ใส่เลขที่บ้านแล้วแตะหลังคาบ้านหลังนั้น เลขที่ถัดไปขึ้นให้เอง ปักต่อได้เรื่อยๆ</div><div class="row2"><input id="qNo" placeholder="เลขที่บ้าน" value="'+esc(q.no)+'" style="width:110px"><select id="qSt" style="flex:1">'+Object.keys(HS).map(function(k){return '<option value="'+k+'"'+(q.status===k?' selected':'')+'>'+HS[k].t+'</option>'}).join('')+'</select></div><div class="bar" style="margin:6px 0 0">'+(q.on?'<button data-fa="qstop">หยุดปัก</button><span class="pill ok">กำลังปัก · เลขที่ '+esc(q.no||'(ว่าง)')+'</span>':'<button class="primary" data-fa="qstart">เริ่มปักต่อเนื่อง</button>')+'</div></div>'}
+ else h+='<div class="warnbox">ผู้ชมดูได้อย่างเดียว</div>';
+ var cnt={};feats.forEach(function(f){if(!f.hidden)cnt[f.kind]=(cnt[f.kind]||0)+1});
+ h+='<h3>ชั้นข้อมูล</h3>'+Object.keys(FK).map(function(k){var K=FK[k];var sw=k==='house'?'background:linear-gradient(90deg,#b5412d 25%,#8e5de0 25% 50%,#f2c01e 50% 75%,#9aa0a6 75%)':'background:'+K.c;return '<label class="kind"><input type="checkbox" data-fvis="'+k+'"'+(st.fvis[k]?' checked':'')+'><i class="sw" style="'+sw+'"></i>'+(K.i?K.i+' ':'')+K.t+'<span class="n">'+(cnt[k]||0)+'</span></label>'}).join('')+'<label class="kind"><input type="checkbox" data-fvis="notes"'+(st.fvis.notes?' checked':'')+'><i class="sw" style="background:#666"></i>📝 โน้ตที่มีตำแหน่ง<span class="n">'+snips.filter(function(s){return s.loc}).length+'</span></label>';
+ h+='<div class="muted" style="margin-top:6px">วงแหวนเขียวที่บ้าน = ติ๊กว่าสัมภาษณ์แล้ว · ลากหมุดเพื่อย้ายได้ ทุกคนปักและแก้ไขได้ มีประวัติและกู้คืนได้</div>';
+ var nums={};feats.forEach(function(f){if(!f.hidden&&f.kind==='house'&&f.no){(nums[f.no]=nums[f.no]||[]).push(f)}});
+ var dups=Object.keys(nums).filter(function(k){return nums[k].length>1});var nonum=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&!f.no});
+ h+='<h3>ต้องตรวจ</h3>'+((dups.length||nonum.length)?dups.map(function(k){return '<div class="item" style="cursor:pointer" data-fsel="'+nums[k][0].id+'">🔴 เลขที่ '+esc(k)+' ซ้ำ '+nums[k].length+' หมุด</div>'}).join('')+nonum.map(function(f){return '<div class="item" style="cursor:pointer" data-fsel="'+f.id+'">🟠 บ้านยังไม่มีเลขที่ ('+esc(HS[f.status].t)+') · '+esc(f.by)+'</div>'}).join(''):'<div class="muted">ไม่พบปัญหา</div>');
+ var hid=feats.filter(function(f){return f.hidden});
+ if(hid.length)h+='<h3>ซ่อนอยู่ ('+hid.length+')</h3>'+hid.map(function(f){return '<div class="item">'+esc(featLabel(f))+' <button data-fa="restore" data-id="'+f.id+'">กู้คืน</button></div>'}).join('');
+ return h}
+function detailTab(){
+ var f=featOf(st.fsel);if(!f||f.hidden)return '<div class="muted">แตะหมุดหรือรูปทรงบนแผนที่เพื่อดูและแก้ไข</div>';
+ var K=FK[f.kind],ed=canTag(),dis=ed?'':' disabled';
+ var h='<h3 style="margin-top:0">'+(K.i?K.i+' ':'')+K.t+'</h3><div class="muted">โดย '+esc(f.by)+' · '+esc(f.at)+'</div>';
+ if(f.kind==='house'){h+='<label class="l">เลขที่บ้าน</label><input class="f" id="fT" value="'+esc(f.no)+'" placeholder="เว้นว่างได้ถ้าไม่มีเลขที่"'+dis+'>';
+  h+='<div class="row2"><div style="flex:1"><label class="l">สถานะบ้าน</label><select class="f" id="fS"'+dis+'>'+Object.keys(HS).map(function(k){return '<option value="'+k+'"'+(f.status===k?' selected':'')+'>'+HS[k].t+'</option>'}).join('')+'</select></div><div style="flex:1"><label class="l">แบบสอบถาม</label><label style="display:flex;gap:5px;align-items:center;margin:6px 0;font-size:13px"><input type="checkbox" id="fIv"'+(f.iv?' checked':'')+dis+'>สัมภาษณ์แล้ว</label></div></div>'}
+ else h+='<label class="l">ชื่อ</label><input class="f" id="fT" value="'+esc(f.title)+'"'+dis+'>';
+ h+='<label class="l">รายละเอียดสั้นๆ</label><textarea class="f" id="fN" rows="3"'+dis+'>'+esc(f.note)+'</textarea><div class="muted">ข้อมูลยาวๆ ให้เขียนเป็นโน้ตในหน้า “ส่งข้อมูล” แล้วผูกกับจุดนี้ เพื่อให้หัวหน้าวิถีเห็นและคัดเลือกได้</div>';
+ h+='<div class="bar">'+(ed?'<button class="primary" data-fa="fsave">บันทึก</button><button class="danger" data-fa="fhide">ซ่อนจุดนี้</button>':'')+'</div>';
+ h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?'<div class="ph">'+f.photos.map(function(p){return '<img src="'+p+'" alt="รูป">'}).join('')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
+ var ls=snips.filter(function(s){return (s.fids||[]).indexOf(f.id)>=0});
+ var ment=snips.filter(function(s){return ls.indexOf(s)<0&&(f.kind==='house'?(f.no&&housesMentioned(s.text).indexOf(tnorm(f.no))>=0):placeHit(f,s.text))});
+ var pp=f.kind==='house'&&f.no?pLive().filter(function(p){return tnorm(p.house)===tnorm(f.no)}):[];
+ if(pp.length)h+='<h3>คนที่อยู่บ้านหลังนี้</h3><div class="chips">'+pp.map(function(p){return '<button data-pp="'+p.id+'">👤 '+esc(p.name)+'</button>'}).join('')+'</div>';
+ h+='<h3>โน้ตที่ผูกกับจุดนี้ ('+ls.length+')</h3>'+(ls.length?ls.map(function(s){return '<div class="item" style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,90))+'…</div>'}).join(''):'<div class="muted">ยังไม่มี · เปิดโน้ตในคลังกลางแล้วค้นหาจุดนี้เพื่อผูก</div>');
+ if(ment.length)h+='<h3>💡 โน้ตที่พูดถึงจุดนี้ แต่ยังไม่ผูก ('+ment.length+')</h3>'+ment.map(function(s){return '<div class="item"><span style="cursor:pointer" data-open="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,80))+'…</span>'+(ed?' <button data-fa="flink" data-sid="'+s.id+'">ผูก</button>':'')+'</div>'}).join('');
+ h+='<h3>ประวัติการแก้ไข</h3><div class="muted">'+f.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
+ return h}
+function notesTab(){
+ var h='<h3 style="margin-top:0">โน้ตบนแผนที่</h3><p class="muted">ตำแหน่งเป็นคุณสมบัติหนึ่งของโน้ต ปักได้ไม่ต้องผูกกับจุด สีหมุดคือวิถีแรกที่ติดป้าย (+ = ติดหลายวิถี, ? = ยังไม่ระบุ)</p>';
+ h+='<div class="chips"><span class="wi'+(st.mw?' o':'')+'" style="'+(st.mw?'color:#888':'background:#555')+';cursor:pointer" data-mw="0">ทุกวิถี</span>'+[1,2,3,4,5,6].map(function(n){return '<span class="wi'+(st.mw===n?'':' o')+'" style="'+(st.mw===n?'background:':'color:')+WC[n]+';cursor:pointer" data-mw="'+n+'">'+n+'</span>'}).join('')+'</div>';
+ var pool=snips.filter(function(s){return !st.mw||has(s,st.mw)});var no=pool.filter(function(s){return !s.loc}),yes=pool.filter(function(s){return s.loc});
+ h+='<h3>ยังไม่มีตำแหน่ง ('+no.length+')</h3>'+no.slice(0,25).map(function(s){return '<div class="item">'+tagChips(s)+' '+esc(s.text.slice(0,70))+'…'+(canTag()?' <button data-pk="'+s.id+'">📍 ปัก</button>':'')+'</div>'}).join('');
+ h+='<h3>มีตำแหน่งแล้ว ('+yes.length+')</h3>'+yes.map(function(s){return '<div class="item" style="cursor:pointer" data-fly="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,70))+'…</div>'}).join('');
+ return h}
+$('mapQ').addEventListener('input',function(){var qp=qparse(this.value);if(!qp.qn){$('mapQRes').innerHTML='';return}
+ var r=feats.map(function(f){return {f:f,sc:featScore(f,qp)}}).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc});
+ $('mapQRes').innerHTML=r.length?r.slice(0,8).map(function(x){return '<div class="item" data-fsel="'+x.f.id+'">'+featIcon(x.f)+'<b>'+esc(featLabel(x.f))+'</b> <span class="muted">'+esc(x.f.kind==='house'?HS[x.f.status].t:FK[x.f.kind].t)+'</span></div>'}).join('')+(r.length>8?'<div class="muted">…อีก '+(r.length-8)+' พิมพ์ให้เจาะจงขึ้น</div>':''):'<div class="muted" style="padding:6px 0">ไม่พบ “'+esc(this.value)+'” บนแผนที่</div>'});
+$('mapQRes').addEventListener('click',function(e){var fs=e.target.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff){selectFeat(ff.id);flyTo(ff)}}});
+$('msBody').addEventListener('click',function(e){
+ var t=e.target;
+ var pp=t.closest('[data-pp]');if(pp)return openPerson(pp.dataset.pp);
+ var o=t.closest('[data-open]');if(o)return openSnip(o.dataset.open);
+ var mw=t.closest('[data-mw]');if(mw){st.mw=+mw.dataset.mw;drawMap();return mapSide()}
+ var pk=t.closest('[data-pk]');if(pk){st.pick=pk.dataset.pk;drawMap();return toast('แตะบนแผนที่ตรงตำแหน่งของโน้ตนี้')}
+ var fl=t.closest('[data-fly]');if(fl){var sn=snipOf(fl.dataset.fly);if(sn&&sn.loc)map.flyTo(sn.loc,19);return openSnip(sn.id)}
+ var fs=t.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff){selectFeat(ff.id);flyTo(ff)}return}
+ var b=t.closest('[data-fa]');if(!b)return;var a=b.dataset.fa,f=st.fsel?featOf(st.fsel):null;
+ if(a==='add'){st.draw={kind:$('fKind').value};st.pts=[];if(st.quick)st.quick.on=false;tmp.clearLayers();drawMap();return}
+ if(a==='qstart'){st.quick.on=true;st.quick.no=$('qNo').value.trim();st.quick.status=$('qSt').value;st.draw=null;drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}return}
+ if(a==='flink'&&f){var fs2=snipOf(b.dataset.sid);if(fs2){addTo(fs2,'fids',f.id,featLabel(f));save();toast('ผูกโน้ตกับ '+featLabel(f)+' แล้ว');mapSide()}return}
+ if(a==='qstop'){st.quick.on=false;drawMap();return mapSide()}
+ if(a==='restore'){var r=featOf(b.dataset.id);r.hidden=false;r.hist.push('กู้คืน · '+me()+' · '+now());save();drawMap();return mapSide()}
+ if(a==='fsave'&&f){var v=$('fT').value.trim();if(f.kind==='house'){f.no=v;f.status=$('fS').value;f.iv=$('fIv').checked;if(!v&&f.status==='ok')f.status='unk'}else f.title=v;f.note=$('fN').value;f.hist.push('แก้ไข · '+me()+' · '+now());save();toast('บันทึกแล้ว');drawMap();return mapSide()}
+ if(a==='fhide'&&f){f.hidden=true;f.hist.push('ซ่อนรายการ · '+me()+' · '+now());st.fsel=null;save();drawMap();mapSide();return toast('ซ่อนแล้ว (กู้คืนได้ที่แท็บ “ชั้นข้อมูล / เพิ่ม”)',function(){f.hidden=false;save();drawMap();mapSide()})}
+});
+$('msBody').addEventListener('change',function(e){var t=e.target;
+ if(t.dataset.fvis){st.fvis[t.dataset.fvis]=t.checked;drawMap();return mapSide()}
+ if(t.id==='fPh'){var f=featOf(st.fsel);if(!f)return;readPhotos(t.files,function(ph){ph.forEach(function(p){f.photos.push(p)});f.hist.push('เพิ่มรูป '+ph.length+' รูป · '+me()+' · '+now());save();mapSide();toast('เพิ่มรูปแล้ว')})}});
+
+// ============ ค้นหา · เชื่อมโยง · บุคคล ============
+function tnorm(s){return String(s==null?'':s).replace(/[๐-๙]/g,function(c){return String(c.charCodeAt(0)-3664)}).toLowerCase()}
+function qparse(q){var qn=tnorm(String(q||'').trim());var hq=qn.replace(/^(บ้านเลขที่|บ้านเลข|เลขที่|หลังที่|บ้าน)\s*/,'');return {qn:qn,hq:hq,isNo:/^\d{1,4}(\/\d{1,3})?$/.test(hq)}}
+function personOf(id){return people.filter(function(p){return p.id===id})[0]}
+function pLive(){return people.filter(function(p){return !p.hidden})}
+function addTo(s,k,id,label){s[k]=s[k]||[];if(s[k].indexOf(id)<0){s[k].push(id);s.hist=s.hist||[];s.hist.push('ผูกกับ '+label+' · '+me()+' · '+now())}}
+function delFrom(s,k,id,label){s[k]=(s[k]||[]).filter(function(x){return x!==id});s.hist=s.hist||[];s.hist.push('เลิกผูกกับ '+label+' · '+me()+' · '+now())}
+function newPerson(name){var p={id:uid('P'),name:String(name).trim(),alias:'',aka:'',house:'',note:'',by:me(),at:now(),hist:['สร้างรายการ · '+me()+' · '+now()],hidden:false};people.push(p);return p}
+function featEm(f){return f.kind==='house'?'🏠':(FK[f.kind].i||'📍')}
+function featIcon(f){return featEm(f)+' '}
+function linkChips(s,rm){var o=[];
+ (s.fids||[]).forEach(function(id){var f=featOf(id);if(f&&!f.hidden)o.push('<span class="lk"><span'+(rm?' data-m="gofeat" data-fid="'+id+'" style="cursor:pointer" title="ดูบนแผนที่"':'')+'>'+featIcon(f)+esc(featLabel(f))+'</span>'+(rm?'<button data-m="unlink" data-fid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
+ (s.pids||[]).forEach(function(id){var p=personOf(id);if(p&&!p.hidden)o.push('<span class="lk p"><span'+(rm?' data-m="gop" data-pid="'+id+'" style="cursor:pointer" title="เปิดหน้าบุคคล"':'')+'>👤 '+esc(p.name)+'</span>'+(rm?'<button data-m="punlink" data-pid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
+ return o.join('')}
+function goFeat(id){var f=featOf(id);closeModal();st.fsel=id;st.mt='detail';st.view='map';render();if(f)setTimeout(function(){flyTo(f)},200)}
+function refreshView(){renderNav();if(st.view==='map'){drawMap();mapSide()}else VIEWS[st.view]()}
+
+// ---- ตรวจจับ “พูดถึง” ในข้อความ (เสนอให้ผูก ไม่ผูกให้เอง) ----
+var TITLES=['นางสาว','น.ส.','ผู้ใหญ่','กำนัน','หลวงพ่อ','อสม.','นาย','นาง','คุณ','ป้า','ลุง','ยาย','น้า','พ่อ','แม่','พี่','หมอ','ครู','ตา','อา'];
+function pClean(x){return String(x||'').replace(/\(.*?\)/g,'').trim()}
+function stripTitle(n){for(var i=0;i<TITLES.length;i++){var t=TITLES[i];if(n.indexOf(t)===0&&n.length>t.length+1)return {t:t,rest:n.slice(t.length).trim()}}return {t:'',rest:n}}
+var PTC={};
+function pTokens(p){var key=p.name+'|'+(p.aka||'');var c=PTC[p.id];if(c&&c.k===key)return c.t;var o={};function add(x){x=pClean(x);if(x.length>=3)o[x]=1}
+ var full=pClean(p.name);add(full);var r=stripTitle(full);add(r.rest);var parts=r.rest.split(/\s+/).filter(Boolean);if(parts[0])add(parts[0]);if(parts.length>1)add(parts[parts.length-1]);if(r.t&&parts[0])add(r.t+parts[0]);
+ String(p.aka||'').split(/[,،]/).forEach(add);
+ var t=Object.keys(o).sort(function(a,b){return b.length-a.length});PTC[p.id]={k:key,t:t};return t}
+function housesMentioned(text){var t=tnorm(text),m,o=[];
+ /* เขียนชัดว่า “บ้านเลขที่/เลขที่/หลังที่” ถือว่าเป็นเลขที่บ้านแน่ · ส่วน “บ้าน 12” เฉยๆ อาจเป็นจำนวน จึงตัดกรณีตามด้วย หลัง/คน/ร้าน/ปี ฯลฯ */
+ var r1=/(?:บ้านเลขที่|บ้านเลข|หลังที่|เลขที่)\s*(\d{1,4}(?:\/\d{1,3})?)(?!\d)/g,r2=/บ้าน\s*(\d{1,4}(?:\/\d{1,3})?)(?!\d)(?!\s*(?:หลัง|คน|ร้าน|ครัว|แห่ง|ไร่|ปี|%|ตัว))/g;
+ while((m=r1.exec(t))){if(o.indexOf(m[1])<0)o.push(m[1])}
+ while((m=r2.exec(t))){if(o.indexOf(m[1])<0)o.push(m[1])}return o}
+function placeHit(f,text){if(f.hidden||f.kind==='house')return false;var n=tnorm(pClean(f.title));return n.length>=4&&tnorm(text).indexOf(n)>=0}
+function peopleMentions(text){var t=tnorm(text);return pLive().filter(function(p){return pTokens(p).some(function(k){return t.indexOf(tnorm(k))>=0})})}
+function suggest(s){
+ var fi=s.fids||[],pi=s.pids||[],r={houses:[],nohouse:[],places:[],people:[]};
+ housesMentioned(s.text).forEach(function(no){var hit=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===no});if(!hit.length)r.nohouse.push(no);hit.forEach(function(f){if(fi.indexOf(f.id)<0)r.houses.push(f)})});
+ feats.forEach(function(f){if(placeHit(f,s.text)&&fi.indexOf(f.id)<0)r.places.push(f)});
+ peopleMentions(s.text).forEach(function(p){if(pi.indexOf(p.id)<0)r.people.push(p)});
+ r.n=r.houses.length+r.places.length+r.people.length;return r}
+
+// ---- ค้นหา ----
+function featScore(f,qp){if(f.hidden)return 0;var qn=qp.qn;
+ if(f.kind==='house'){var no=tnorm(f.no);if(qp.isNo&&no){if(no===qp.hq)return 100;if(no.indexOf(qp.hq)===0)return 60;if(no.indexOf(qp.hq)>=0)return 30}
+  if(!qp.isNo&&tnorm(f.note+' '+HS[f.status].t+(f.iv?' สัมภาษณ์แล้ว':'')).indexOf(qn)>=0)return 20;return 0}
+ if(tnorm(f.title).indexOf(qn)>=0)return 70;return tnorm(FK[f.kind].t+' '+f.note).indexOf(qn)>=0?25:0}
+function personHit(p,qp){if(p.hidden)return false;if(qp.isNo)return !!p.house&&tnorm(p.house)===qp.hq;return tnorm([p.name,p.alias,p.aka,p.note,p.house?'บ้าน '+p.house:''].join(' ')).indexOf(qp.qn)>=0}
+function snipSearch(s,qp){var n=noteOf(s),qn=qp.qn,sc=0,why=[],tx=tnorm(s.text);
+ if(qp.isNo){if(housesMentioned(s.text).indexOf(qp.hq)>=0)sc=55;else if(tx.indexOf(qp.hq)>=0)sc=25}else if(tx.indexOf(qn)>=0)sc=40;
+ if(tnorm([n.informant,n.title,n.by,s.reportName].join(' ')).indexOf(qn)>=0)sc=Math.max(sc,30);
+ (s.fids||[]).forEach(function(id){var f=featOf(id);if(!f||f.hidden)return;var hit=f.kind==='house'?(qp.isNo?tnorm(f.no)===qp.hq:tnorm(f.no).indexOf(qn)>=0):tnorm(featLabel(f)+' '+f.note).indexOf(qn)>=0;if(hit){sc=Math.max(sc,50);why.push(featIcon(f)+featLabel(f))}});
+ (s.pids||[]).forEach(function(id){var p=personOf(id);if(p&&personHit(p,qp)){sc=Math.max(sc,50);why.push('👤 '+p.name)}});
+ return sc?{s:s,sc:sc,why:why}:null}
+function excerpt(text,qp){var t=tnorm(text),k=(qp.isNo&&t.indexOf(qp.hq)>=0)?qp.hq:qp.qn,i=t.indexOf(k);if(i<0)return esc(text.slice(0,90)+(text.length>90?'…':''));var a=Math.max(0,i-28),b=Math.min(text.length,i+k.length+60);return (a?'…':'')+esc(text.slice(a,i))+'<mark>'+esc(text.slice(i,i+k.length))+'</mark>'+esc(text.slice(i+k.length,b))+(b<text.length?'…':'')}
+function renderSearch(q){var qp=qparse(q);if(!qp.qn)return '';
+ var F=feats.map(function(f){return {f:f,sc:featScore(f,qp)}}).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc});
+ var P=pLive().filter(function(p){return personHit(p,qp)});
+ var S=snips.map(function(s){return snipSearch(s,qp)}).filter(Boolean).sort(function(a,b){return b.sc-a.sc});
+ var h='';
+ if(F.length)h+='<h4>🏠 บ้านและจุดบนแผนที่ ('+F.length+')</h4>'+F.slice(0,6).map(function(x){var f=x.f;return '<div class="sr" data-sr="f|'+f.id+'"><span class="ic">'+featEm(f)+'</span><div class="tt"><b>'+esc(featLabel(f))+'</b><small>'+esc(f.kind==='house'?HS[f.status].t+(f.iv?' · สัมภาษณ์แล้ว':''):FK[f.kind].t)+(f.note?' · '+esc(f.note):'')+'</small></div></div>'}).join('')+(F.length>6?'<div class="muted" style="padding:0 10px 4px">…อีก '+(F.length-6)+' รายการ พิมพ์ให้เจาะจงขึ้น</div>':'');
+ if(P.length)h+='<h4>👥 บุคคล ('+P.length+')</h4>'+P.slice(0,5).map(function(p){var cnt=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)>=0}).length;return '<div class="sr" data-sr="p|'+p.id+'"><span class="ic">👤</span><div class="tt"><b>'+esc(p.name)+(p.alias?' <span class="muted">('+esc(p.alias)+')</span>':'')+'</b><small>'+(p.house?'บ้านเลขที่ '+esc(p.house)+' · ':'')+cnt+' ข้อความที่ผูกไว้'+(p.note?' · '+esc(p.note):'')+'</small></div></div>'}).join('');
+ if(S.length)h+='<h4>📝 ข้อความ ('+S.length+')</h4>'+S.slice(0,6).map(function(x){var s=x.s;return '<div class="sr" data-sr="s|'+s.id+'"><span class="ic">📝</span><div class="tt"><b style="font-weight:500;white-space:normal">'+excerpt(s.text,qp)+'</b><small>'+(x.why.length?'ผูกกับ '+x.why.map(esc).join(', ')+' · ':'')+esc(noteOf(s).by)+(s.wi.length?' · วิถี '+s.wi.join(','):' · ยังไม่ระบุวิถี')+'</small></div></div>'}).join('')+'<button class="more" data-sr="all|">ดูทั้ง '+S.length+' ข้อความในคลังกลาง</button>';
+ if(!h)h='<div class="empty" style="margin:6px;padding:18px"><span class="em">🔎</span>ไม่พบ “'+esc(q)+'”</div>';
+ return h}
+var GQ=$('gq');
+function showSearch(){var q=GQ.value,box=$('sres');if(!q.trim()){box.style.display='none';return}box.innerHTML=renderSearch(q);box.style.display='block'}
+GQ.addEventListener('input',showSearch);GQ.addEventListener('focus',showSearch);
+GQ.addEventListener('keydown',function(e){if(e.key==='Escape'){$('sres').style.display='none';GQ.blur()}if(e.key==='Enter'){var f=$('sres').querySelector('[data-sr]');if(f)f.click()}});
+document.addEventListener('click',function(e){if(!e.target.closest('.search'))$('sres').style.display='none'});
+document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape')closeModal()});
+$('sres').addEventListener('click',function(e){var b=e.target.closest('[data-sr]');if(!b)return;var k=b.dataset.sr.split('|'),id=k[1];$('sres').style.display='none';
+ if(k[0]==='f')return goFeat(id);if(k[0]==='p')return openPerson(id);if(k[0]==='s')return openSnip(id);
+ if(k[0]==='all'){st.f={wi:0,status:'',q:GQ.value.trim(),flag:false,multi:false};closeModal();go('pool')}});
+
+// ---- ⑥ บุคคล ----
+function viewPeople(){
+ var h='<div class="wrap"><div class="pagehead"><div><h2>บุคคล</h2><p class="muted" style="margin:0">รายชื่อคนที่พูดถึงในโน้ต ใช้ชื่อจริงในระบบภายในได้ ค้นชื่อแล้วเห็นทุกข้อความของคนนี้จากทุกวิถี</p></div>'+(canTag()?'<button class="primary" data-a="padd">＋ เพิ่มบุคคล</button>':'')+'</div>';
+ h+='<div class="warnbox soft">🔒 ชื่อจริงอยู่ในระบบภายในเท่านั้น ตอนส่งออก “ที่เลือกเก็บไว้” ระบบจะแทนชื่อด้วย <b>ตัวย่อที่ใช้ในรายงาน</b> ให้อัตโนมัติ ถ้ายังไม่ตั้งตัวย่อจะแทนด้วย “[ยังไม่ตั้งตัวย่อ]” (ระบบปิดเฉพาะชื่อที่อยู่ในหน้านี้ ไม่ปิดเลขที่บ้าน)</div>';
+ h+='<div class="bar"><input id="peQ" placeholder="ค้นชื่อ ตัวย่อ ชื่อเล่น หรือบ้านเลขที่" style="flex:1"></div><div id="peList"></div><div id="peGone"></div></div>';
+ $('view').innerHTML=h;
+ function fill(){var qp=qparse($('peQ').value);var list=pLive().filter(function(p){return !qp.qn||personHit(p,qp)});
+  $('peList').innerHTML=list.length?list.map(function(p){var linked=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)>=0}).length;var ment=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)<0&&peopleMentions(s.text).some(function(x){return x.id===p.id})}).length;
+   return '<div class="card" data-pp="'+p.id+'" style="--stripe:#6a58b5"><div class="prow"><span class="avatar">'+esc(stripTitle(pClean(p.name)).rest.charAt(0)||'?')+'</span><div class="info"><b>'+esc(p.name)+'</b> '+(p.alias?'<span class="pill ok">ในรายงาน: '+esc(p.alias)+'</span>':'<span class="pill warn">ยังไม่ตั้งตัวย่อ</span>')+'<div class="muted">'+(p.house?'🏠 บ้านเลขที่ '+esc(p.house)+' · ':'')+linked+' ข้อความที่ผูกไว้'+(ment?' · <span class="sugg">💡 พบชื่อในอีก '+ment+' ข้อความ</span>':'')+(p.note?' · '+esc(p.note):'')+'</div></div></div></div>'}).join(''):'<div class="empty"><span class="em">👥</span>'+(pLive().length?'ไม่พบ':'ยังไม่มีบุคคล กด “＋ เพิ่มบุคคล” หรือสร้างจากหน้าต่างข้อมูลย่อย')+'</div>';
+  var gone=people.filter(function(p){return p.hidden});
+  $('peGone').innerHTML=gone.length?'<h3>ที่ลบไว้ ('+gone.length+')</h3>'+gone.map(function(p){return '<div class="item">'+esc(p.name)+' '+(canTag()?'<button data-a="prestore" data-id="'+p.id+'">กู้คืน</button>':'')+'</div>'}).join(''):''}
+ $('peQ').oninput=fill;fill()}
+function openPerson(id){
+ var isNew=id==='new';var p=isNew?{id:'new',name:'',alias:'',aka:'',house:'',note:'',hist:[]}:personOf(id);if(!p)return;
+ var ed=canTag(),dis=ed?'':' disabled';
+ var h='<div class="mhead"><b style="font-size:16px">'+(isNew?'เพิ่มบุคคล':'บุคคล')+'</b><button data-pm="close" class="x" title="ปิด (Esc)">✕</button></div>';
+ h+='<div class="grid2"><div><label class="l">ชื่อ * (ชื่อที่ทีมเรียกกัน)</label><input class="f" id="pName" value="'+esc(p.name)+'" placeholder="เช่น ป้าสมศรี ใจงาม"'+dis+'></div><div><label class="l">ตัวย่อที่ใช้ในรายงาน</label><input class="f" id="pAlias" value="'+esc(p.alias)+'" placeholder="เช่น ส. หรือ ผู้ใหญ่บ้าน"'+dis+'></div>';
+ h+='<div><label class="l">ชื่อเล่น / ชื่อเรียกอื่น (คั่นด้วย ,)</label><input class="f" id="pAka" value="'+esc(p.aka)+'" placeholder="เช่น หมอบุญ, ลุงมี"'+dis+'></div><div><label class="l">บ้านเลขที่</label><input class="f" id="pHouse" value="'+esc(p.house)+'" placeholder="เช่น 21 หรือ 21/2"'+dis+'></div></div>';
+ h+='<label class="l">หมายเหตุ (ความสัมพันธ์ บทบาทในชุมชน)</label><input class="f" id="pNote" value="'+esc(p.note)+'"'+dis+'>';
+ h+='<div class="muted" style="margin-top:6px">ระบบเสนอผูกจากชื่อเต็ม ชื่อต้น นามสกุล และชื่อเล่นที่ยาวตั้งแต่ 3 ตัวอักษรขึ้นไป ชื่อที่สั้นกว่านั้นค้นหาได้ แต่ระบบไม่เสนอผูกให้ เพื่อกันเดาผิด</div>';
+ h+='<div class="bar">'+(ed?'<button class="primary" data-pm="save">บันทึก</button>'+(isNew?'':'<button class="danger" data-pm="hide">ลบบุคคลนี้ (เลิกทำได้)</button>'):'')+'</div>';
+ if(!isNew){
+  if(p.house){var hn=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&tnorm(f.no)===tnorm(p.house)});h+='<div class="chips">'+(hn.length?'<span class="lk">🏠 บ้านเลขที่ '+esc(p.house)+' มีหมุดบนแผนที่</span><button data-pm="gof" data-fid="'+hn[0].id+'">ดูบนแผนที่</button>':'<span class="muted">ยังไม่มีหมุดบ้านเลขที่ '+esc(p.house)+' บนแผนที่</span>')+'</div>';
+   var mates=pLive().filter(function(x){return x.id!==p.id&&tnorm(x.house)===tnorm(p.house)});
+   if(mates.length)h+='<h3>คนอื่นที่อยู่บ้านเลขที่เดียวกัน</h3><div class="chips">'+mates.map(function(x){return '<button data-pm="gop" data-pid="'+x.id+'">👤 '+esc(x.name)+'</button>'}).join('')+'</div>'}
+  var linked=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)>=0});
+  var sug=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)<0&&peopleMentions(s.text).some(function(x){return x.id===p.id})});
+  h+='<h3>ข้อความที่ผูกไว้ ('+linked.length+') · จากทุกวิถี</h3>'+(linked.length?linked.map(function(s){return '<div class="item" style="cursor:pointer" data-pm="osnip" data-sid="'+s.id+'"><div class="chips">'+tagChips(s)+'</div>'+esc(s.text.slice(0,120))+(s.text.length>120?'…':'')+'</div>'}).join(''):'<div class="muted">ยังไม่มี</div>');
+  if(sug.length)h+='<h3>💡 พบชื่อนี้ในข้อความ แต่ยังไม่ผูก ('+sug.length+')</h3>'+sug.map(function(s){return '<div class="item"><span style="cursor:pointer" data-pm="osnip" data-sid="'+s.id+'">'+esc(s.text.slice(0,120))+(s.text.length>120?'…':'')+'</span> '+(ed?'<button data-pm="plink" data-sid="'+s.id+'">ผูก</button>':'')+'</div>'}).join('')+(ed?'<div class="bar"><button class="primary" data-pm="linkall">ผูกทั้งหมด ('+sug.length+')</button></div>':'');
+  if(p.hist&&p.hist.length)h+='<h3>ประวัติ</h3><div class="muted">'+p.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>'}
+ $('mbody').dataset.kind='p';$('mbody').dataset.id=id;$('mbody').innerHTML=h;$('modal').style.display='flex'}
+$('mbody').addEventListener('click',function(e){
+ if($('mbody').dataset.kind!=='p')return;
+ var b=e.target.closest('[data-pm]');if(!b)return;var a=b.dataset.pm,id=$('mbody').dataset.id,p=id==='new'?null:personOf(id);
+ if(a==='close')return closeModal();
+ if(a==='osnip')return openSnip(b.dataset.sid);
+ if(a==='gop')return openPerson(b.dataset.pid);
+ if(a==='gof')return goFeat(b.dataset.fid);
+ if(a==='save'){var nm=$('pName').value.trim();if(!nm)return toast('ใส่ชื่อก่อน');
+  var dup=pLive().some(function(x){return x!==p&&tnorm(x.name)===tnorm(nm)});
+  if(!p)p=newPerson(nm);else{if(p.name!==nm)p.hist.push('แก้ชื่อ “'+p.name+'” เป็น “'+nm+'” · '+me()+' · '+now());else p.hist.push('แก้ไข · '+me()+' · '+now());p.name=nm}
+  p.alias=$('pAlias').value.trim();p.aka=$('pAka').value.trim();p.house=$('pHouse').value.trim();p.note=$('pNote').value.trim();
+  save();toast(dup?'บันทึกแล้ว (มีชื่อเดียวกันอยู่แล้ว ตรวจว่าซ้ำไหม)':'บันทึกแล้ว');refreshView();return openPerson(p.id)}
+ if(!p)return;
+ if(a==='hide'){p.hidden=true;p.hist.push('ลบ · '+me()+' · '+now());save();closeModal();refreshView();return toast('ลบ “'+p.name+'” แล้ว',function(){p.hidden=false;save();refreshView()})}
+ if(a==='plink'){var s=snipOf(b.dataset.sid);if(s){addTo(s,'pids',p.id,p.name);save();refreshView()}return openPerson(p.id)}
+ if(a==='linkall'){snips.forEach(function(s){if((s.pids||[]).indexOf(p.id)<0&&peopleMentions(s.text).some(function(x){return x.id===p.id}))addTo(s,'pids',p.id,p.name)});save();refreshView();toast('ผูกครบแล้ว');return openPerson(p.id)}
+});
+
+// ---- ปิดชื่อตอนส่งออก ----
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+function maskText(t){var rules=[];pLive().forEach(function(p){pTokens(p).forEach(function(k){rules.push([k,p.alias||'[ยังไม่ตั้งตัวย่อ]'])})});rules.sort(function(a,b){return b[0].length-a[0].length});rules.forEach(function(r){t=t.replace(new RegExp(escRe(r[0]),'gi'),function(){return r[1]})});return t}
+function noAlias(list){var o={};list.forEach(function(s){peopleMentions(s.text).forEach(function(p){if(!p.alias)o[p.id]=p})});return Object.keys(o).map(function(k){return o[k]})}
+
+// ============ เริ่มต้น ============
+$('leadSel').innerHTML=[1,2,3,4,5,6].map(function(n){return '<option value="'+n+'">วิถี '+n+' '+WI[n]+'</option>'}).join('');
+$('roleSel').value=st.role;$('leadSel').value=st.lead;$('leadSel').style.display=st.role==='lead'?'':'none';
+function roleChange(){st.role=$('roleSel').value;st.lead=+$('leadSel').value;$('leadSel').style.display=st.role==='lead'?'':'none';render()}
+$('roleSel').onchange=roleChange;$('leadSel').onchange=roleChange;
+render();
+</script>
+</body>
+</html>
