@@ -168,6 +168,19 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .rlc .rlq{width:100%;margin-top:4px;padding:5px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink)}
 .rlc .rli{padding:4px 2px;cursor:pointer;border-radius:6px}.rlc .rli:hover{background:var(--accent-soft)}
 .rlc .rls{color:var(--mute);margin-top:6px;font-size:12px}
+/* ปุ่มซ่อนชนิด + พื้นที่กำหนดเอง */
+.mfg{display:inline-flex;align-items:center}
+.mfg .mfchip{border-top-right-radius:0;border-bottom-right-radius:0;border-right:0}
+.mfeye{border:1px solid var(--line2);background:var(--panel);color:var(--ink);border-radius:0 99px 99px 0;padding:3px 9px;cursor:pointer;font-size:13px;line-height:1.5}
+.mfeye.off{background:#c0392b;border-color:#c0392b;color:#fff}
+.mfchip.off{opacity:.55;text-decoration:line-through}
+.sws{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid rgba(0,0,0,.35);padding:0;cursor:pointer}
+.sw.on{outline:3px solid var(--accent);outline-offset:2px}
+.sws input[type=color]{width:36px;height:30px;padding:0;border:1px solid var(--line2);border-radius:8px;background:transparent;cursor:pointer}
+.ztip{background:rgba(255,255,255,.92)!important;color:#1b1b1b!important;border:0!important;border-radius:8px!important;font-size:14px;box-shadow:0 1px 5px rgba(0,0,0,.5)!important;padding:2px 9px!important}
+.ztip:before{display:none!important}
+.small .ztip{display:none}
 /* วงแหวนชี้ผลการค้นหา */
 .fr{position:relative;width:72px;height:72px}
 .fr b{position:absolute;left:8px;top:8px;right:8px;bottom:8px;border:5px solid #ff2d95;border-radius:50%;box-shadow:0 0 0 3px #fff,0 0 18px 6px rgba(255,45,149,.85)}
@@ -314,11 +327,15 @@ var FK={ // ชนิดของจุดบนแผนที่เดิน�
  water:{t:'แหล่งน้ำ (พื้นที่)',c:'#2f8fe0',geom:'poly',fill:.35},
  stream:{t:'ลำห้วย / คลอง (เส้น)',c:'#2f8fe0',geom:'line'},
  green:{t:'พื้นที่ธรรมชาติ',c:'#3fae49',geom:'poly',fill:.35},
- boundary:{t:'ขอบเขตหมู่บ้าน / คุ้ม',c:'#e02424',geom:'poly',fill:0}
+ boundary:{t:'ขอบเขตหมู่บ้าน / คุ้ม',c:'#e02424',geom:'poly',fill:0},
+ zone:{t:'พื้นที่ (ตั้งชื่อ / เลือกสีเอง)',c:'#9b59b6',geom:'poly',fill:.18}
 };
-function K_(k){return FK[k]||FK.landmark} /* กันพังถ้าเครื่องเก่าเจอชนิดใหม่ที่ไม่รู้จัก */
+function K_(k){return FK[k]||FK.landmark}
+/* ชนิดของจุด โดยเดารูปแบบจากพิกัดเมื่อเป็นชนิดที่เว็บรุ่นนี้ยังไม่รู้จัก (ไม่ให้แผนที่พังเมื่อมีชนิดใหม่จากรุ่นหน้า) */
+function kOf(f){return FK[f.kind]||(Array.isArray(f.coords&&f.coords[0])?{t:'พื้นที่',c:'#888888',geom:'poly',fill:.2}:FK.landmark)}
+var ZPAL=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e84393','#95a5a6','#ffffff']; /* กันพังถ้าเครื่องเก่าเจอชนิดใหม่ที่ไม่รู้จัก */
 var HS={nonum:{t:'ไม่มีบ้านเลขที่',c:'#b5412d',f:'#fff'},unk:{t:'ไม่ทราบบ้านเลขที่',c:'#8e5de0',f:'#fff'},ok:{t:'บ้านปกติ',c:'#f2c01e',f:'#222'},ruin:{t:'บ้านร้าง',c:'#9aa0a6',f:'#222'}};
-var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},kin:'',find:null,full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true};
+var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},hide:{},kin:'',find:null,full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true};
 var notes=[],snips=[],feats=[],people=[],rels=[];
 
 // ============ ยูทิลิตี ============
@@ -610,7 +627,9 @@ function exportText(w){
 // จุดบนแผนที่ (feature) = "สิ่งที่อยู่ตรงนั้น" เช่น บ้านเลขที่ วัด หนองน้ำ ส่วนความรู้/ข้อความยาวๆ เป็นโน้ต (ข้อมูลย่อย) แล้วผูกเข้ากับจุด
 /* ตัวกรอง: st.only ว่าง = แสดงทุกอย่าง · มีค่า = แสดงเฉพาะชนิดที่เลือก (บ้านกับโน้ตก็เป็นชนิดหนึ่ง) */
 function onlyKeys(){return Object.keys(st.only).filter(function(k){return st.only[k]})}
-function visK(k){var a=onlyKeys();return !a.length||!!st.only[k]}
+function hideKeys(){return Object.keys(st.hide).filter(function(k){return st.hide[k]})}
+/* เห็นหรือไม่: ซ่อนชนิดนั้น (👁) หรือซ่อนพื้นที่ทั้งหมด → ไม่เห็น · ไม่งั้นดู "ดูเฉพาะ" (ว่าง = เห็นทั้งหมด) */
+function visK(k){if(st.hide[k])return false;if(st.hide.polys&&FK[k]&&FK[k].geom==='poly')return false;var a=onlyKeys();return !a.length||!!st.only[k]}
 function kinsOf(f){return Array.isArray(f.kin)?f.kin:[]}
 function allKins(){var m={};feats.forEach(function(f){if(!f.hidden&&f.kind==='house')kinsOf(f).forEach(function(k){m[k]=(m[k]||0)+1})});return m}
 function rng(s){return function(){s=(s*1664525+1013904223)%4294967296;return s/4294967296}}
@@ -684,7 +703,10 @@ function onMapClick(e){
   if(k.geom==='point'){var f=createFeat(st.draw.kind,ll);st.draw=null;st.fsel=f.id;st.mt='detail';drawMap();mapSide();return}
   st.pts.push(ll);tmp.clearLayers();L.polyline(st.pts,{color:'#ffd23f',weight:3,dashArray:'4 4'}).addTo(tmp);st.pts.forEach(function(p){L.circleMarker(p,{radius:4,color:'#ffd23f',fillOpacity:1}).addTo(tmp)})}}
 function finishDraw(){var k=FK[st.draw.kind],min=k.geom==='line'?2:3;if(st.pts.length<min)return toast('ต้องมีอย่างน้อย '+min+' จุด');var f=createFeat(st.draw.kind,st.pts.slice());st.draw=null;st.pts=[];tmp.clearLayers();st.fsel=f.id;st.mt='detail';drawMap();mapSide()}
-function createFeat(kind,coords,extra){var f={id:uid('F'),kind:kind,title:kind==='house'?'':K_(kind).t+' ใหม่',no:'',status:'unk',iv:false,coords:coords,note:'',photos:[],by:me(),at:now(),hist:['สร้างรายการ · '+me()+' · '+now()],hidden:false};if(extra)for(var k in extra)f[k]=extra[k];feats.push(f);save();return f}
+function createFeat(kind,coords,extra){var f={id:uid('F'),kind:kind,title:kind==='house'?'':K_(kind).t+' ใหม่',no:'',status:'unk',iv:false,coords:coords,note:'',photos:[],by:me(),at:now(),hist:['สร้างรายการ · '+me()+' · '+now()],hidden:false};if(kind==='zone'){f.title='พื้นที่ใหม่';f.color=ZPAL[feats.filter(function(x){return x.kind==='zone'}).length%(ZPAL.length-1)];f.fillLevel=1}
+ if(extra)for(var k in extra)f[k]=extra[k];feats.push(f);save();return f}
+/* พื้นที่กำหนดเอง: ปรับสีและความเข้มของพื้นที่ */
+function setZone(f,o){if(!f||f.kind!=='zone'||!canTag())return;for(var k in o)f[k]=o[k];f.hist.push('ปรับสี/การแรเงาพื้นที่ · '+me()+' · '+now());save();drawMap();mapSide()}
 function nextNo(no){var m=String(no).match(/^(\d+)$/);return m?String(+m[1]+1):''}
 function quickHouse(ll){
  var no=$('qNo')?$('qNo').value.trim():st.quick.no;var stt=$('qSt')?$('qSt').value:st.quick.status;if(!no&&stt==='ok')stt='unk';
@@ -698,7 +720,7 @@ function findSet(){var f=featOf(st.find);if(!f||f.hidden)return [];
  if(f.kind==='house'&&f.no){var k=nno(f.no);return feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.no&&nno(x.no)===k})}return [f]}
 function findIcon(){return L.divIcon({className:'',html:'<div class="fr"><i></i><i></i><b></b><span class="fa">▼</span></div>',iconSize:[72,72],iconAnchor:[36,36]})}
 /* หาจุดนี้: เปิดรายละเอียด ซูมไปที่จุด และขึ้นวงแหวนชมพู (ถ้าชนิดนี้ถูกซ่อนด้วยตัวกรอง จะล้างตัวกรองให้เห็นก่อน) */
-function findFeat(f){if(!f)return;if(!visK(f.kind))st.only={};st.find=f.id;st.fsel=f.id;st.mt='detail';drawMap();mapSide();flyTo(f)}
+function findFeat(f){if(!f)return;if(!visK(f.kind)){st.only={};st.hide={}}st.find=f.id;st.fsel=f.id;st.mt='detail';drawMap();mapSide();flyTo(f)}
 /* เปลี่ยนชนิดของจุด เช่น บ้าน → ร้านค้า (ข้อมูลเดิมเก็บไว้ครบ เปลี่ยนกลับได้ · ข้ามรูปแบบจุด/พื้นที่/เส้นไม่ได้) */
 function changeKind(f,nk){if(!f||!FK[nk]||nk===f.kind||!canTag())return;
  if(K_(f.kind).geom!==FK[nk].geom)return toast('เปลี่ยนข้ามรูปแบบไม่ได้ (จุด / พื้นที่ / เส้น)');
@@ -708,7 +730,7 @@ function changeKind(f,nk){if(!f||!FK[nk]||nk===f.kind||!canTag())return;
  f.hist.push('เปลี่ยนชนิดจาก “'+K_(old.kind).t+'” เป็น “'+FK[nk].t+'” · '+me()+' · '+now());save();drawMap();mapSide();
  toast('เปลี่ยนเป็น “'+FK[nk].t+'” แล้ว',function(){f.kind=old.kind;f.title=old.title;f.no=old.no;f.status=old.status;f.hist.push('เลิกเปลี่ยนชนิด · '+me()+' · '+now());save();drawMap();mapSide()})}
 function selectFeat(id){st.fsel=id;st.mt='detail';drawMap();mapSide()}
-function flyTo(f){if(!map)return;if(K_(f.kind).geom==='point')map.flyTo(f.coords,19);else map.fitBounds(L.latLngBounds(f.coords))}
+function flyTo(f){if(!map)return;if(kOf(f).geom==='point')map.flyTo(f.coords,19);else map.fitBounds(L.latLngBounds(f.coords))}
 function drawMap(){
  if(!map)return;grp.clearLayers();cl.clearLayers();
  var active=!!(st.pick||(st.quick&&st.quick.on)||st.draw);
@@ -718,20 +740,22 @@ function drawMap(){
  refreshRelHi();rlg.clearLayers();var RE=relEdges();
  var kinOn=!!st.kin||!!st.relHi;
  feats.forEach(function(f){
-  if(f.hidden||!visK(f.kind))return;var k=K_(f.kind),sel=f.id===st.fsel,lay;
+  if(f.hidden||!visK(f.kind))return;var k=kOf(f),sel=f.id===st.fsel,lay;
   var lv=f.kind!=='house'?0:(st.kin&&kinsOf(f).indexOf(st.kin)>=0)?1:(st.relHi&&f.no&&st.relHi.map[nno(f.no)])||0;
   var isKin=lv>0,dim=kinOn&&!isKin;
   if(k.geom==='point'){lay=L.marker(f.coords,{icon:f.kind==='house'?houseIcon(f,sel,isKin,dim,lv===2,houseBadge(f,RE)):pinIcon(k,sel,dim),draggable:canTag()&&!st.full,title:f.title||f.no,zIndexOffset:isKin?1000:(sel?500:0)});
    lay.on('dragend',function(e){var p=e.target.getLatLng();f.coords=[p.lat,p.lng];f.hist.push('ย้ายตำแหน่ง · '+me()+' · '+now());save();setTimeout(drawMap,0)})}
   else if(k.geom==='line'){lay=L.polyline(f.coords,{color:k.c,weight:sel?7:4,opacity:dim?.25:.9})}
-  else{lay=L.polygon(f.coords,{color:k.c,weight:sel?4:2,opacity:dim?.25:1,fillColor:k.c,fillOpacity:dim?k.fill/4:k.fill,dashArray:f.kind==='boundary'?'6 5':null})}
+  else{var pc=(f.kind==='zone'&&f.color)||k.c,fl=f.kind==='zone'?[0,.18,.38][f.fillLevel==null?1:f.fillLevel]:k.fill;
+   lay=L.polygon(f.coords,{color:pc,weight:sel?4:(f.kind==='zone'?3:2),opacity:dim?.25:1,fillColor:pc,fillOpacity:dim?fl/4:fl,dashArray:f.kind==='boundary'?'6 5':null})}
   lay.on('click',function(ev){if(active)return;L.DomEvent.stopPropagation(ev);if(st.full)return showPop(f,ev.latlng);st.find=null;selectFeat(f.id)});
+  if(f.kind==='zone'&&f.title&&!dim)lay.bindTooltip('<b>'+esc(f.title)+'</b>',{permanent:true,direction:'center',className:'ztip'});else
   lay.bindTooltip(esc(featLabel(f)+(f.who?' · '+f.who:''))+((st.relHi&&f.no&&st.relHi.names[nno(f.no)])?'<br>👪 '+st.relHi.names[nno(f.no)].map(esc).join('<br>👪 '):''),{direction:'top',offset:[0,-6]});
   /* บ้านและรูปทรงพื้นที่วาดตรงๆ · จุดอื่นๆ เข้ากลุ่มรวมถ้าซ้อนกัน · จุดที่เลือกอยู่/ที่เรืองแสงเครือญาติ ไม่ถูกรวม */
   if(k.geom==='point'&&f.kind!=='house'&&!sel)lay.addTo(cl);else lay.addTo(grp)});
  if(visK('notes'))snips.filter(function(s){return s.loc&&(!st.mw||has(s,st.mw))}).forEach(function(s){var m=L.marker(s.loc,{icon:noteIcon(s,kinOn)});m.on('click',function(){if(active)return;openSnip(s.id)});m.bindTooltip(esc(s.text.slice(0,50)+'…'));m.addTo(cl)});
  /* ผลค้นหา: วงแหวนสีชมพูกะพริบ + ลูกศร + ป้ายชื่อ บนจุดที่หา (บ้านเลขที่ซ้ำกันขึ้นทุกหมุด) · ล้างด้วยปุ่มล่างแผนที่ / Esc / กดหมุดอื่น */
- if(st.find){findSet().forEach(function(f){var g=K_(f.kind).geom;
+ if(st.find){findSet().forEach(function(f){var g=kOf(f).geom;
   if(g==='point'){var fm=L.marker(f.coords,{icon:findIcon(),interactive:false,keyboard:false,zIndexOffset:3000});fm.bindTooltip(esc(featLabel(f)),{permanent:true,direction:'bottom',offset:[0,34],className:'ftip'});fm.addTo(grp)}
   else if(g==='line')L.polyline(f.coords,{color:'#ff2d95',weight:10,opacity:.95,interactive:false}).addTo(grp);
   else L.polygon(f.coords,{color:'#ff2d95',weight:8,fillColor:'#ff2d95',fillOpacity:.18,interactive:false}).addTo(grp)})}
@@ -803,9 +827,11 @@ function kindCounts(){var cnt={};feats.forEach(function(f){if(!f.hidden)cnt[f.ki
 function kindDot(k){if(k==='house')return '<i class="dot" style="background:linear-gradient(90deg,#b5412d 25%,#8e5de0 25% 50%,#f2c01e 50% 75%,#9aa0a6 75%)"></i>';if(k==='notes')return '<i class="dot" style="background:#666"></i>';return '<i class="dot" style="background:'+K_(k).c+'"></i>'}
 function kindChips(){
  var cnt=kindCounts(),keys=Object.keys(FK).concat(['notes']),h='';
- keys.forEach(function(k){if(!cnt[k]&&!st.only[k])return;var on=!!st.only[k];
-  h+='<button class="mfchip'+(on?' on':'')+'" data-only="'+k+'">'+(on?'':kindDot(k))+(k==='notes'?'📝 โน้ตที่มีตำแหน่ง':((FK[k].i?FK[k].i+' ':'')+FK[k].t))+' <span class="n">'+(cnt[k]||0)+'</span></button>'});
- if(onlyKeys().length)h+='<button class="mfchip" data-onlyclear="1">✕ ล้างตัวกรอง</button>';
+ keys.forEach(function(k){var hid=!!st.hide[k];if(!cnt[k]&&!st.only[k]&&!hid)return;var on=!!st.only[k];
+  h+='<span class="mfg"><button class="mfchip'+(on?' on':'')+(hid?' off':'')+'" data-only="'+k+'" title="กดเพื่อดูเฉพาะชนิดนี้">'+(on?'':kindDot(k))+(k==='notes'?'📝 โน้ตที่มีตำแหน่ง':((FK[k].i?FK[k].i+' ':'')+FK[k].t))+' <span class="n">'+(cnt[k]||0)+'</span></button><button class="mfeye'+(hid?' off':'')+'" data-hide="'+k+'" title="'+(hid?'แสดงชนิดนี้อีกครั้ง':'ซ่อนชนิดนี้ ไม่ให้เห็นบนแผนที่')+'">'+(hid?'🚫':'👁')+'</button></span>'});
+ var polyCnt=Object.keys(FK).filter(function(k){return FK[k].geom==='poly'}).reduce(function(n,k){return n+(cnt[k]||0)},0);
+ if(polyCnt||st.hide.polys)h+='<button class="mfchip'+(st.hide.polys?' off':'')+'" data-hide="polys" title="ซ่อนหรือแสดงพื้นที่และกรอบทุกชนิดพร้อมกัน">'+(st.hide.polys?'🚫 ซ่อนพื้นที่ทั้งหมดอยู่':'ซ่อนพื้นที่ทั้งหมด')+' <span class="n">'+polyCnt+'</span></button>';
+ if(onlyKeys().length||hideKeys().length)h+='<button class="mfchip" data-onlyclear="1">✕ ล้างตัวกรอง</button>';
  return h}
 function kinChips(){var m=allKins(),ks=Object.keys(m);if(!ks.length)return '';
  return ks.map(function(k){return '<button class="mfchip kin'+(st.kin===k?' on':'')+'" data-kinpick="'+esc(k)+'">🌿 '+esc(k)+' <span class="n">'+m[k]+' หลัง</span></button>'}).join('')}
@@ -824,7 +850,9 @@ function showPop(f,ll){
 document.addEventListener('click',function(e){
  var t=e.target;if(!t.closest)return;var b;
  if(b=t.closest('[data-only]')){var k=b.dataset.only;if(st.only[k])delete st.only[k];else st.only[k]=true;drawMap();return mapSide()}
- if(t.closest('[data-onlyclear]')){st.only={};drawMap();return mapSide()}
+ if(b=t.closest('[data-hide]')){var hk=b.dataset.hide;if(st.hide[hk])delete st.hide[hk];else st.hide[hk]=true;drawMap();return mapSide()}
+ if(b=t.closest('[data-zc]')){setZone(featOf(st.fsel),{color:b.dataset.zc});return}
+ if(t.closest('[data-onlyclear]')){st.only={};st.hide={};drawMap();return mapSide()}
  if(b=t.closest('[data-kinpick]')){st.kin=(st.kin===b.dataset.kinpick)?'':b.dataset.kinpick;if(st.kin)st.relHi=null;drawMap();return mapSide()}
  if(b=t.closest('[data-relhi]')){setRelHi(b.dataset.relhi,false);drawMap();mapSide();return rhFit()}
  if(t.closest('[data-hlclear]')){st.kin='';st.relHi=null;st.find=null;drawMap();return mapSide()}
@@ -888,6 +916,9 @@ function detailTab(){
   var ak=Object.keys(allKins());
   h+='<label class="l">ตระกูล / กลุ่มเครือญาติ (ใส่ได้หลายกลุ่ม คั่นด้วย , )</label><input class="f" id="fKin" value="'+esc(kinsOf(f).join(', '))+'" placeholder="เช่น ตระกูลสมบัติ, ตระกูลศรีสุข"'+dis+'>'+(ed&&ak.length?'<div class="mfchips">'+ak.map(function(k){return '<button class="mfchip kin" data-kinadd="'+esc(k)+'">＋ '+esc(k)+'</button>'}).join('')+'</div>':'')}
  else{h+='<label class="l">ชื่อ</label><input class="f" id="fT" value="'+esc(f.title)+'"'+dis+'>';
+  if(f.kind==='zone'){var zc=(f.color||K.c).toLowerCase(),zl=f.fillLevel==null?1:f.fillLevel;
+   h+='<label class="l">สีของพื้นที่</label><div class="sws">'+ZPAL.map(function(c){return '<button class="sw'+(zc===c?' on':'')+'" data-zc="'+c+'" style="background:'+c+'" title="'+c+'"'+dis+'></button>'}).join('')+'<input type="color" id="fZc" value="'+(/^#[0-9a-f]{6}$/.test(zc)?zc:'#9b59b6')+'" title="เลือกสีเอง"'+dis+'></div>';
+   h+='<label class="l">การแรเงา</label><select class="f" id="fZf"'+dis+'>'+['เฉพาะเส้นกรอบ','สีอ่อน','สีเข้มปานกลาง'].map(function(t,i){return '<option value="'+i+'"'+(zl===i?' selected':'')+'>'+t+'</option>'}).join('')+'</select><div class="muted">ชื่อที่ตั้งไว้จะแสดงกลางพื้นที่บนแผนที่ (ซูมเข้าถึงจะเห็น)</div>'}
   if(K.who){h+='<label class="l">เป็นใคร / ตำแหน่ง</label><input class="f" id="fWho" value="'+esc(f.who||'')+'" placeholder="เช่น ผู้ใหญ่บ้าน, อสม. ประจำคุ้ม 2, ประธานกองทุน"'+dis+'>';
    h+='<label class="l">ผูกกับรายชื่อในหน้า “บุคคล” (ไม่บังคับ)</label><select class="f" id="fPid"'+dis+'><option value="">— ไม่ผูก —</option>'+pLive().map(function(p){return '<option value="'+p.id+'"'+(f.pid===p.id?' selected':'')+'>'+esc(p.name)+(p.alias?' ('+esc(p.alias)+')':'')+'</option>'}).join('')+'</select>'+(f.pid&&people.some(function(p){return p.id===f.pid&&!p.hidden})?'<div class="chips" style="margin-top:6px"><button data-pp="'+f.pid+'">👤 เปิดข้อมูลบุคคลนี้</button></div>':'')}}
  if(f.kind==='house'&&f.no)h+='<div class="bar" style="margin:8px 0 0"><button class="primary" data-hm="'+esc(f.no)+'">📇 เปิดข้อมูลบ้านเลขที่ '+esc(f.no)+' (รวมทุกอย่าง)</button></div>';
@@ -944,7 +975,8 @@ $('msBody').addEventListener('click',function(e){
 });
 $('msBody').addEventListener('input',function(e){if(e.target.id!=='rhQ')return;var q=e.target.value.trim(),qp=qparse(q);
  $('rhRes').innerHTML=q?(pLive().filter(function(x){return relHit(x,qp)}).slice(0,6).map(function(x){return '<div class="item" style="cursor:pointer" data-relhi="'+x.id+'">👤 '+pBrief(x)+' <span class="muted">· '+relCount(x.id)+' ความสัมพันธ์</span></div>'}).join('')||'<div class="muted">ไม่พบ</div>'):''});
-$('msBody').addEventListener('change',function(e){var t=e.target;if(t.id==='fKindSel')return changeKind(featOf(st.fsel),t.value);if(t.id==='rhAll'&&st.relHi){st.relHi.all=t.checked;drawMap();return mapSide()}
+$('msBody').addEventListener('change',function(e){var t=e.target;if(t.id==='fKindSel')return changeKind(featOf(st.fsel),t.value);
+ if(t.id==='fZc')return setZone(featOf(st.fsel),{color:t.value});if(t.id==='fZf')return setZone(featOf(st.fsel),{fillLevel:+t.value});if(t.id==='rhAll'&&st.relHi){st.relHi.all=t.checked;drawMap();return mapSide()}
  if(t.dataset.fvis){st.fvis[t.dataset.fvis]=t.checked;drawMap();return mapSide()}
  if(t.id==='fPh'){var f=featOf(st.fsel);if(!f)return;readPhotos(t.files,function(ph){ph.forEach(function(p){f.photos.push(p)});f.hist.push('เพิ่มรูป '+ph.length+' รูป · '+me()+' · '+now());save();mapSide();toast('เพิ่มรูปแล้ว')})}});
 
@@ -964,7 +996,7 @@ function linkChips(s,rm){var o=[];
  (s.fids||[]).forEach(function(id){var f=featOf(id);if(f&&!f.hidden)o.push('<span class="lk"><span'+(rm?' data-m="gofeat" data-fid="'+id+'" style="cursor:pointer" title="ดูบนแผนที่"':'')+'>'+featIcon(f)+esc(featLabel(f))+'</span>'+(rm?'<button data-m="unlink" data-fid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
  (s.pids||[]).forEach(function(id){var p=personOf(id);if(p&&!p.hidden)o.push('<span class="lk p"><span'+(rm?' data-m="gop" data-pid="'+id+'" style="cursor:pointer" title="เปิดหน้าบุคคล"':'')+'>👤 '+esc(p.name)+'</span>'+(rm?'<button data-m="punlink" data-pid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
  return o.join('')}
-function goFeat(id){var f=featOf(id);closeModal();st.fsel=id;st.mt='detail';st.view='map';if(f){if(!visK(f.kind))st.only={};st.find=id}render();if(f)setTimeout(function(){flyTo(f)},200)}
+function goFeat(id){var f=featOf(id);closeModal();st.fsel=id;st.mt='detail';st.view='map';if(f){if(!visK(f.kind)){st.only={};st.hide={}}st.find=id}render();if(f)setTimeout(function(){flyTo(f)},200)}
 function refreshView(){renderNav();if(st.view==='map'){drawMap();mapSide()}else VIEWS[st.view]()}
 
 // ---- ตรวจจับ “พูดถึง” ในข้อความ (เสนอให้ผูก ไม่ผูกให้เอง) ----
