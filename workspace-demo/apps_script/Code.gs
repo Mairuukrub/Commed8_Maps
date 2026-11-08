@@ -7,14 +7,14 @@
  *
  * ทุกคำขอเป็น POST { action, code, ... } (ข้อความล้วน ไม่ติด CORS preflight) คืน JSON
  *   login        → { ok, name, role, wi }
- *   pull         { since } → ข้อมูลที่เปลี่ยนหลังเวลา since: { now, recs: { notes|snips|people|feats: [{id, rev, at, by, json}] } }
+ *   pull         { since } → ข้อมูลที่เปลี่ยนหลังเวลา since: { now, recs: { notes|snips|people|feats|rels: [{id, rev, at, by, json}] } }
  *   push         { changes:[{ t, id, base, data }] } → ผลรายการ ok / conflict (มีคนแก้ก่อน คืนฉบับเซิร์ฟเวอร์) / rejected / toolarge
  *   uploadPhoto  { mime, b64 } → { id }          photo { id } → { mime, b64 }   (เฉพาะไฟล์ในโฟลเดอร์รูปของระบบนี้)
  *   codes / addCode / revokeCode  (admin เท่านั้น)
  *
  * ไม่มีรหัสใดอยู่ในโค้ดนี้ · ห้ามใส่ข้อมูลจริงใน repo สาธารณะ
  */
-const TABS = ["notes", "snips", "people", "feats"];
+const TABS = ["notes", "snips", "people", "feats", "rels"];
 const ACCESS = "access";
 const HEAD = ["id", "rev", "at", "by", "json"];
 const MAX_JSON = 48000;        // ขีดจำกัด 50,000 ตัวอักษรต่อเซลล์ของ Google Sheets
@@ -56,7 +56,13 @@ function ss_() {
   SS_ = SpreadsheetApp.openById(id);
   return SS_;
 }
-const tab_ = (t) => ss_().getSheetByName(t);
+/** คืนแท็บของข้อมูล ถ้ายังไม่มี (เช่น แท็บ rels ที่เพิ่มทีหลัง) จะสร้างให้เองพร้อมหัวตาราง ไม่ต้องรัน setup() ซ้ำ */
+const tab_ = (t) => {
+  const ss = ss_();
+  let sh = ss.getSheetByName(t);
+  if (!sh && TABS.indexOf(t) >= 0) { sh = ss.insertSheet(t); sh.getRange(1, 1, 1, HEAD.length).setValues([HEAD]); sh.setFrozenRows(1); }
+  return sh;
+};
 const json_ = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 
 function doGet() {
