@@ -216,11 +216,27 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .sug{background:var(--warn-bg);color:var(--warn-ink);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:13px}
 .sug button{margin:4px 6px 0 0;background:var(--panel);font-size:12.5px;padding:2px 10px}
 .sug button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:4px 14px}
-.toast{position:fixed;z-index:4000;left:50%;bottom:22px;transform:translateX(-50%);background:#1d2a24;color:#fff;padding:10px 16px;border-radius:12px;display:none;font-size:13.5px;max-width:90vw;box-shadow:var(--sh2)}
+.toast{position:fixed;z-index:6000;left:50%;bottom:22px;transform:translateX(-50%);background:#1d2a24;color:#fff;padding:10px 16px;border-radius:12px;display:none;font-size:13.5px;max-width:90vw;box-shadow:var(--sh2)}
 .toast button{background:transparent;color:#9be7c4;border-color:#4a6b5c}
 .hint{position:absolute;z-index:1000;left:50%;transform:translateX(-50%);top:10px;background:var(--warn-bg);color:var(--warn-ink);padding:7px 14px;border-radius:99px;font-size:13px;display:none;gap:8px;align-items:center;box-shadow:var(--sh2)}
 .ph{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
-.ph img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.ph img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.ph img[data-pi]{cursor:zoom-in}
+.pt{position:relative;display:inline-block}
+.pdel{position:absolute;top:-7px;right:-7px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:#c0392b;color:#fff;font-size:12px;padding:0;line-height:1;cursor:pointer;display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+/* ดูรูปเต็มจอ */
+.lb{position:fixed;inset:0;z-index:5000;background:rgba(5,10,8,.95);display:none;flex-direction:column;align-items:center;justify-content:center;touch-action:pan-y}
+.lb.on{display:flex}
+#lbm{flex:1;display:flex;align-items:center;justify-content:center;overflow:auto;width:100%;padding:56px 12px 8px;min-height:0}
+#lbm img{max-width:96vw;max-height:calc(100vh - 150px);width:auto;height:auto;object-fit:contain;border-radius:6px;border:0;cursor:zoom-in}
+.lb.zoom #lbm{display:block}
+.lb.zoom #lbm img{max-width:none;max-height:none;cursor:zoom-out}
+.lbx{position:absolute;top:12px;right:14px;z-index:2;width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:20px;cursor:pointer}
+.lbn{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:52px;height:72px;border:0;border-radius:12px;background:rgba(255,255,255,.14);color:#fff;font-size:34px;cursor:pointer}
+.lbn.pv{left:10px}.lbn.nx{right:10px}
+.lbbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;padding:10px 14px 18px;color:#eaf3ee;font-size:14.5px}
+.lbbar button{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:10px;padding:6px 14px;cursor:pointer}
+.lbbar button.dg{background:#a93226;border-color:#a93226}
 .pin{display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:12px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.6)}
 .leaflet-container{font-family:inherit}
 a{color:var(--accent)}
@@ -250,6 +266,7 @@ code{background:var(--chip);padding:1px 6px;border-radius:6px}
 <div id="view"></div>
 <div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><button id="hlClear" data-hlclear="1" title="ปิดไฮไลต์เขียวนีออนทั้งหมด (หรือกด Esc)">✕ ล้างไฮไลต์ทั้งหมด</button><div id="mapFloat"></div><button id="mapFullBtn" class="primary" title="ซ่อนแผงด้านข้าง เหลือแต่แผนที่">⛶ โหมดแผนที่อย่างเดียว</button><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
 <div class="modal" id="modal"><div class="mp" id="mbody"></div></div>
+<div class="lb" id="lb"><button class="lbx" data-lb="close" title="ปิด (Esc)">✕</button><button class="lbn pv" data-lb="prev" title="รูปก่อนหน้า (←)">‹</button><div id="lbm"></div><button class="lbn nx" data-lb="next" title="รูปถัดไป (→)">›</button><div class="lbbar" id="lbbar"></div></div>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
@@ -319,7 +336,7 @@ function wiChip(w,o,star){return '<span class="wi'+(o?' o':'')+'" style="'+(o?'c
 function tagChips(s,skipW){if(!s.wi.length)return '<span class="pill warn">ยังไม่ระบุวิถี</span>';return s.wi.filter(function(w){return w!==skipW}).map(function(w){return wiChip(w,false,stOf(s,w)==='pick')}).join('')}
 function samplePhoto(label,hue){var c=document.createElement('canvas');c.width=320;c.height=240;var x=c.getContext('2d');var g=x.createLinearGradient(0,0,320,240);g.addColorStop(0,'hsl('+hue+',45%,55%)');g.addColorStop(1,'hsl('+(hue+40)+',45%,35%)');x.fillStyle=g;x.fillRect(0,0,320,240);x.fillStyle='rgba(255,255,255,.9)';x.font='bold 22px sans-serif';x.textAlign='center';x.fillText('ตัวอย่างรูป',160,115);x.font='16px sans-serif';x.fillText(label,160,145);return c.toDataURL('image/jpeg',.7)}
 function readPhotos(files,cb){var arr=Array.prototype.slice.call(files||[]);if(!arr.length)return cb([]);var out=[],left=arr.length;function done(){left--;if(left===0)cb(out)}
- arr.forEach(function(f){var fr=new FileReader();fr.onerror=done;fr.onload=function(){var img=new Image();img.onerror=done;img.onload=function(){var s=Math.min(1,1024/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);out.push(c.toDataURL('image/jpeg',.7));done()};img.src=fr.result};fr.readAsDataURL(f)})}
+ arr.forEach(function(f){var fr=new FileReader();fr.onerror=done;fr.onload=function(){var img=new Image();img.onerror=done;img.onload=function(){var s=Math.min(1,(SYNC_ON?1600:1024)/Math.max(img.width,img.height));var c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);out.push(c.toDataURL('image/jpeg',.7));done()};img.src=fr.result};fr.readAsDataURL(f)})}
 
 // ============ แยกย่อหน้า (ไม่มีการเดาวิถี) ============
 function paras(t){var a=t.split(/\n\s*\n/).map(function(x){return x.trim()}).filter(Boolean);if(a.length<2)a=t.split(/\n/).map(function(x){return x.trim()}).filter(Boolean);var out=[];a.forEach(function(p){if(out.length&&p.length<25)out[out.length-1]+=' '+p;else out.push(p)});return out.length?out:[t.trim()]}
@@ -485,7 +502,7 @@ function openSnip(id){
  h+='<div class="bar">'+(canTag()?'<button class="primary" data-m="save">บันทึก</button><button data-m="flag">'+(s.flag?'ยกเลิกธงขัดกัน':'ติดธง “ขัดกัน/ต้องตรวจ”')+'</button><button data-m="pin">'+(s.loc?'📍 ย้ายตำแหน่งบนแผนที่':'📍 ปักตำแหน่งบนแผนที่')+'</button>':'')+'</div>';
  if((s.hist||[]).length)h+='<h3>ประวัติ</h3><div class="muted">'+s.hist.slice(-6).reverse().map(function(x){return '• '+esc(x)}).join('<br>')+'</div>';
  h+='<h3>ที่มา</h3><div class="muted">'+esc(n.method)+' · ผู้ให้ข้อมูล: '+esc(n.informant||'ไม่ระบุ')+' · '+esc(n.date)+' · บันทึกโดย '+esc(n.by)+' ('+esc(n.at)+')'+(n.docs?' · ต้นฉบับ: '+esc(n.docs):'')+'</div>';
- if(n.photos.length)h+='<div class="ph">'+n.photos.map(imgTag).join('')+'</div>';
+ if(n.photos.length)h+=phGrid(n.photos,'n',n.id,{del:canDelPhoto('n',n)});
  h+='<h3>ต้นฉบับทั้งโน้ต'+(n.title?' · '+esc(n.title):'')+'</h3><div class="muted">ลากคลุมข้อความด้านล่างแล้วกดปุ่มเพื่อตัดเป็นข้อมูลย่อยใหม่ (ข้อมูลใหม่จะขึ้น “ยังไม่ระบุวิถี” ให้ติดป้ายเอง)</div>';
  var raw=esc(n.text);if(s.text&&n.text.indexOf(s.text)>=0)raw=esc(n.text).replace(esc(s.text),'<mark>'+esc(s.text)+'</mark>');
  h+='<div class="raw" id="rawTxt" style="margin-top:6px">'+raw+'</div>';
@@ -772,7 +789,7 @@ function showPop(f,ll){
  if(f.who)h+='<div>เป็นใคร: '+esc(f.who)+'</div>';
  if(kinsOf(f).length)h+='<div>🌿 '+kinsOf(f).map(esc).join(', ')+'</div>';
  if(f.note)h+='<div>'+esc(f.note.slice(0,140))+'</div>';
- if(f.photos&&f.photos.length)h+='<div class="ph" style="margin:4px 0">'+f.photos.slice(0,2).map(imgTag).join('')+'</div>';
+ if(f.photos&&f.photos.length)h+=phGrid(f.photos.slice(0,2),'f',f.id,{})+(f.photos.length>2?'<div class="muted">มีอีก '+(f.photos.length-2)+' รูป ดูในรายละเอียด</div>':'');
  h+='<button data-popedit="'+f.id+'">ดู / แก้ไขรายละเอียด</button>'+(f.kind==='house'&&f.no?' <button class="primary" data-hm="'+esc(f.no)+'">📇 ข้อมูลบ้านนี้</button>':'');
  L.popup({maxWidth:260}).setLatLng(ll||f.coords).setContent(h).openOn(map)}
 document.addEventListener('click',function(e){
@@ -845,7 +862,7 @@ function detailTab(){
  if(f.kind==='house'&&f.no)h+='<div class="bar" style="margin:8px 0 0"><button class="primary" data-hm="'+esc(f.no)+'">📇 เปิดข้อมูลบ้านเลขที่ '+esc(f.no)+' (รวมทุกอย่าง)</button></div>';
  h+='<label class="l">รายละเอียดสั้นๆ</label><textarea class="f" id="fN" rows="3"'+dis+'>'+esc(f.note)+'</textarea><div class="muted">ข้อมูลยาวๆ ให้เขียนเป็นโน้ตในหน้า “ส่งข้อมูล” แล้วผูกกับจุดนี้ เพื่อให้หัวหน้าวิถีเห็นและคัดเลือกได้</div>';
  h+='<div class="bar">'+(ed?'<button class="primary" data-fa="fsave">บันทึก</button><button class="danger" data-fa="fhide">ซ่อนจุดนี้</button>':'')+'</div>';
- h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?'<div class="ph">'+f.photos.map(imgTag).join('')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
+ h+='<h3>รูปภาพ ('+f.photos.length+')</h3>'+(f.photos.length?phGrid(f.photos,'f',f.id,{del:ed})+'<div class="muted">กดที่รูปเพื่อดูเต็มจอ'+(ed?' · กด ✕ เพื่อลบรูป (เลิกทำได้)':'')+'</div>':'<div class="muted">ยังไม่มีรูป</div>')+(ed?'<input type="file" id="fPh" accept="image/*" multiple style="max-width:100%">':'');
  var ls=snips.filter(function(s){return (s.fids||[]).indexOf(f.id)>=0});
  var ment=snips.filter(function(s){return ls.indexOf(s)<0&&(f.kind==='house'?(f.no&&housesMentioned(s.text).indexOf(nno(f.no))>=0):placeHit(f,s.text))});
  var pp=f.kind==='house'&&f.no?pLive().filter(function(p){return nno(p.house)===nno(f.no)}):[];
@@ -971,7 +988,8 @@ function showSearch(){var q=GQ.value,box=$('sres');if(!q.trim()){box.style.displ
 GQ.addEventListener('input',showSearch);GQ.addEventListener('focus',showSearch);
 GQ.addEventListener('keydown',function(e){if(e.key==='Escape'){$('sres').style.display='none';GQ.blur()}if(e.key==='Enter'){var f=$('sres').querySelector('[data-sr],[data-hm]');if(f)f.click()}});
 document.addEventListener('click',function(e){if(!e.target.closest('.search'))$('sres').style.display='none'});
-document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape'){if($('modal').style.display!=='none')closeModal();else if(st.view==='map'&&(st.kin||st.relHi)&&!st.pick&&!st.draw&&!(st.quick&&st.quick.on)){st.kin='';st.relHi=null;drawMap();mapSide()}}});
+document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();
+ if($('lb').classList.contains('on')){if(e.key==='Escape'){e.preventDefault();return lbClose()}if(e.key==='ArrowLeft')return lbStep(-1);if(e.key==='ArrowRight')return lbStep(1);return}if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape'){if($('modal').style.display!=='none')closeModal();else if(st.view==='map'&&(st.kin||st.relHi)&&!st.pick&&!st.draw&&!(st.quick&&st.quick.on)){st.kin='';st.relHi=null;drawMap();mapSide()}}});
 $('sres').addEventListener('click',function(e){var b=e.target.closest('[data-sr]');if(!b)return;var k=b.dataset.sr.split('|'),id=k[1];$('sres').style.display='none';
  if(k[0]==='f')return goFeat(id);if(k[0]==='p')return openPerson(id);if(k[0]==='s')return openSnip(id);
  if(k[0]==='all'){st.f={wi:0,status:'',q:GQ.value.trim(),flag:false,multi:false};closeModal();go('pool')}});
@@ -1129,7 +1147,7 @@ function openHouse(no,back){
  h+='<h3>🗺️ หมุดบนแผนที่</h3>';
  if(!D.pins.length)h+='<div class="muted">ยังไม่มีหมุดบ้านเลขที่นี้บนแผนที่ (ปักได้ที่แท็บแผนที่เดินดิน)</div>';
  else{if(D.pins.length>1)h+='<div class="warnbox">มี '+D.pins.length+' หมุดที่ใช้เลขที่นี้ ตรวจว่าซ้ำหรือไม่</div>';
-  D.pins.forEach(function(f){var S=HS[f.status]||HS.unk;h+='<div class="item"><span class="dot" style="background:'+S.c+'"></span><b>'+esc(S.t)+'</b>'+(f.iv?' · <span class="pill ok">สัมภาษณ์แล้ว</span>':' · <span class="muted">ยังไม่ติ๊กสัมภาษณ์</span>')+(kinsOf(f).length?' · 🌿 '+kinsOf(f).map(esc).join(', '):'')+(f.note?'<div class="muted">'+esc(f.note)+'</div>':'')+(f.photos&&f.photos.length?'<div class="ph">'+f.photos.map(imgTag).join('')+'</div>':'')+'<div class="bar" style="margin:4px 0 0"><button data-hm2="go" data-id="'+f.id+'">ดูบนแผนที่'+(ed?' / แก้ไขหมุด':'')+'</button></div></div>'})}
+  D.pins.forEach(function(f){var S=HS[f.status]||HS.unk;h+='<div class="item"><span class="dot" style="background:'+S.c+'"></span><b>'+esc(S.t)+'</b>'+(f.iv?' · <span class="pill ok">สัมภาษณ์แล้ว</span>':' · <span class="muted">ยังไม่ติ๊กสัมภาษณ์</span>')+(kinsOf(f).length?' · 🌿 '+kinsOf(f).map(esc).join(', '):'')+(f.note?'<div class="muted">'+esc(f.note)+'</div>':'')+(f.photos&&f.photos.length?phGrid(f.photos,'f',f.id,{del:ed}):'')+'<div class="bar" style="margin:4px 0 0"><button data-hm2="go" data-id="'+f.id+'">ดูบนแผนที่'+(ed?' / แก้ไขหมุด':'')+'</button></div></div>'})}
  // คนในบ้าน
  h+='<h3>👥 คนในบ้านนี้ ('+D.res.length+')</h3>';
  h+=D.res.length?D.res.map(function(p){var rc=relCount(p.id);return '<div class="item"><span style="cursor:pointer" data-hm2="person" data-id="'+p.id+'">'+pBrief(p)+'</span> '+(rc?'<span class="pill">👪 '+rc+'</span> <button data-hm2="relmap" data-id="'+p.id+'">บ้านญาติบนแผนที่</button>':'<span class="muted">ยังไม่มีความสัมพันธ์</span>')+'</div>'}).join(''):'<div class="muted">ยังไม่มีคนที่ระบุว่าอยู่บ้านนี้</div>';
@@ -1248,6 +1266,46 @@ function arr(t){return t==='notes'?notes:t==='snips'?snips:t==='people'?people:t
 function hash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return h}
 var PHC={},PHL={},BLANK='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 function imgTag(p){if(String(p).indexOf('drive:')!==0)return '<img src="'+p+'" alt="รูป">';var c=PHC[p];if(!c)loadPhoto(p);return '<img data-ph="'+esc(p)+'" src="'+(c||BLANK)+'" alt="รูป">'}
+/* ---- รูปภาพ: ดูเต็มจอ · ลบ · หมุน ---- */
+/* ลบ = เอาออกจากรายการของจุด/โน้ต (ไฟล์ใน Drive ไม่ถูกลบ) กู้คืนได้ทันทีจากแถบแจ้งเตือน · ผู้ชมลบไม่ได้ · รูปในโน้ตลบได้เฉพาะเจ้าของโน้ตหรือผู้ดูแล */
+var LB={g:'',i:0};
+function canDelPhoto(k,o){if(!canTag())return false;return k==='f'?true:(st.role==='admin'||o.by===me())}
+function phGrid(arr,kind,id,opt){opt=opt||{};var del=!!opt.del&&canTag();
+ return '<div class="ph" data-pg="'+kind+':'+id+'">'+arr.map(function(p,i){var t=imgTag(p).replace('<img ','<img data-pi="'+i+'" title="กดเพื่อดูเต็มจอ" ');return '<span class="pt">'+t+(del?'<button class="pdel" data-pdel="'+i+'" title="ลบรูปนี้">✕</button>':'')+'</span>'}).join('')+'</div>'}
+function pgInfo(g){var k=g.charAt(0),id=g.slice(2);
+ if(k==='f'){var f=featOf(id);return f?{k:k,arr:f.photos,label:featLabel(f),obj:f}:null}
+ if(k==='n'){var n=notes.filter(function(x){return x.id===id})[0];return n?{k:k,arr:n.photos,label:n.title||'โน้ต',obj:n}:null}return null}
+function afterPhoto(g){
+ if($('lb').classList.contains('on'))lbRender();
+ var kind=$('mbody').dataset.kind,open_=$('modal').style.display!=='none';
+ if(g.charAt(0)==='f'){if(st.view==='map'){drawMap();if(st.mt==='detail')mapSide()}if(open_&&kind==='h')openHouse($('mbody').dataset.no)}
+ else if(open_&&kind==='s')openSnip($('mbody').dataset.id);
+ else refreshView()}
+function delPhoto(g,i){var I=pgInfo(g);if(!I)return;if(!canDelPhoto(I.k,I.obj))return toast('ลบรูปนี้ไม่ได้ (ผู้ชม หรือรูปในโน้ตของคนอื่น)');
+ var p=I.arr.splice(i,1)[0];if(p===undefined)return;if(I.obj.hist)I.obj.hist.push('ลบรูป 1 รูป · '+me()+' · '+now());save();afterPhoto(g);
+ toast('ลบรูปแล้ว',function(){I.arr.splice(i,0,p);if(I.obj.hist)I.obj.hist.push('กู้คืนรูป · '+me()+' · '+now());save();afterPhoto(g)})}
+function rotPhoto(g,i){var I=pgInfo(g);if(!I||!canDelPhoto(I.k,I.obj))return;var p=I.arr[i];var src=String(p).indexOf('drive:')===0?PHC[p]:p;if(!src)return toast('รูปยังโหลดไม่เสร็จ รอสักครู่แล้วลองใหม่');
+ var im=new Image();im.onload=function(){var c=document.createElement('canvas');c.width=im.height;c.height=im.width;var x=c.getContext('2d');x.translate(c.width/2,c.height/2);x.rotate(Math.PI/2);x.drawImage(im,-im.width/2,-im.height/2);I.arr[i]=c.toDataURL('image/jpeg',.82);if(I.obj.hist)I.obj.hist.push('หมุนรูป · '+me()+' · '+now());save();afterPhoto(g)};im.onerror=function(){toast('หมุนรูปไม่สำเร็จ')};im.src=src}
+function lbOpen(g,i){LB.g=g;LB.i=i;$('lb').classList.remove('zoom');$('lb').classList.add('on');lbRender()}
+function lbClose(){$('lb').classList.remove('on','zoom');$('lbm').innerHTML=''}
+function lbRender(){var I=pgInfo(LB.g);if(!I||!I.arr.length)return lbClose();LB.i=Math.max(0,Math.min(LB.i,I.arr.length-1));
+ var p=I.arr[LB.i],n=I.arr.length,dg=canDelPhoto(I.k,I.obj);
+ $('lbm').innerHTML=imgTag(p).replace('<img ','<img data-lbz="1" ');
+ $('lb').querySelector('.pv').style.display=n>1?'':'none';$('lb').querySelector('.nx').style.display=n>1?'':'none';
+ $('lbbar').innerHTML='<span>'+esc(I.label)+' · รูป '+(LB.i+1)+' / '+n+'</span><button data-lb="zoom">'+($('lb').classList.contains('zoom')?'🔍 ย่อ':'🔍 ขยายเต็มขนาด')+'</button>'+(dg?'<button data-lb="rot">↻ หมุน</button>':'')+'<button data-lb="save">⬇ บันทึกรูป</button>'+(dg?'<button class="dg" data-lb="del">🗑 ลบรูปนี้</button>':'')}
+function lbStep(d){var I=pgInfo(LB.g);if(!I)return;LB.i=(LB.i+d+I.arr.length)%I.arr.length;$('lb').classList.remove('zoom');lbRender()}
+document.addEventListener('click',function(e){var t=e.target;if(!t.closest)return;
+ var d=t.closest('[data-pdel]');if(d){var g=d.closest('[data-pg]');if(g){e.preventDefault();e.stopPropagation();delPhoto(g.dataset.pg,+d.dataset.pdel)}return}
+ var lb=t.closest('[data-lb]');
+ if(lb&&$('lb').contains(lb)){e.preventDefault();e.stopPropagation();var a=lb.dataset.lb;
+  if(a==='close')return lbClose();if(a==='prev')return lbStep(-1);if(a==='next')return lbStep(1);
+  if(a==='zoom'){$('lb').classList.toggle('zoom');return lbRender()}
+  if(a==='del'){var gg=LB.g,ii=LB.i;return delPhoto(gg,ii)}
+  if(a==='rot')return rotPhoto(LB.g,LB.i);
+  if(a==='save'){var im=$('lbm').querySelector('img');if(!im||!im.src||im.src===BLANK)return toast('รูปยังโหลดไม่เสร็จ');var an=document.createElement('a');an.href=im.src;an.download='รูป-'+Date.now()+'.jpg';document.body.appendChild(an);an.click();an.remove();return}}
+ if(t.closest('#lb')){if(t.closest('[data-lbz]')){$('lb').classList.toggle('zoom');lbRender();return}if(t.id==='lb'||t.id==='lbm')lbClose();return}
+ var im2=t.closest('img[data-pi]');if(im2){var g2=im2.closest('[data-pg]');if(g2){e.preventDefault();e.stopPropagation();lbOpen(g2.dataset.pg,+im2.dataset.pi)}}},true);
+(function(){var x0=null;var el=$('lb');el.addEventListener('touchstart',function(e){x0=e.touches.length===1?e.touches[0].clientX:null},{passive:true});el.addEventListener('touchend',function(e){if(x0===null||$('lb').classList.contains('zoom'))return;var dx=(e.changedTouches[0]||{}).clientX-x0;x0=null;if(Math.abs(dx)>70)lbStep(dx<0?1:-1)},{passive:true})})();
 function loadPhoto(p){if(PHL[p]||!SYNC_ON)return;PHL[p]=1;
  api('photo',{id:p.slice(6)}).then(function(r){if(r.ok){PHC[p]='data:'+r.mime+';base64,'+r.b64;[].forEach.call(document.querySelectorAll('img[data-ph]'),function(im){if(im.dataset.ph===p)im.src=PHC[p]})}else PHL[p]=0},function(){PHL[p]=0})}
 
