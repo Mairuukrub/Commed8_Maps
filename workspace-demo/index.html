@@ -168,6 +168,16 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .rlc .rlq{width:100%;margin-top:4px;padding:5px 8px;border-radius:8px;border:1px solid var(--line2);background:var(--panel2);color:var(--ink)}
 .rlc .rli{padding:4px 2px;cursor:pointer;border-radius:6px}.rlc .rli:hover{background:var(--accent-soft)}
 .rlc .rls{color:var(--mute);margin-top:6px;font-size:12px}
+/* วงแหวนชี้ผลการค้นหา */
+.fr{position:relative;width:72px;height:72px}
+.fr b{position:absolute;left:8px;top:8px;right:8px;bottom:8px;border:5px solid #ff2d95;border-radius:50%;box-shadow:0 0 0 3px #fff,0 0 18px 6px rgba(255,45,149,.85)}
+.fr i{position:absolute;left:8px;top:8px;right:8px;bottom:8px;border:4px solid #ff2d95;border-radius:50%;animation:frp 1.6s ease-out infinite}
+.fr i+i{animation-delay:.8s}
+@keyframes frp{from{transform:scale(1);opacity:.95}to{transform:scale(2.8);opacity:0}}
+.fa{position:absolute;left:50%;top:-30px;transform:translateX(-50%);font-size:30px;line-height:1;color:#ff2d95;text-shadow:0 0 4px #fff,0 0 8px #fff,0 2px 4px #000;animation:fab 1s ease-in-out infinite}
+@keyframes fab{0%,100%{top:-30px}50%{top:-22px}}
+.ftip{background:#ff2d95!important;color:#fff!important;border:2px solid #fff!important;font-weight:700;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,.6)!important}
+.ftip:before{border-bottom-color:#fff!important}
 .hl.kin.me{box-shadow:0 0 0 3px #fff,0 0 0 6px #39ff14,0 0 18px 8px rgba(57,255,20,.95);z-index:950}
 .dim{opacity:.2;filter:grayscale(1)}
 .pl.kin{box-shadow:0 0 0 3px #39ff14,0 0 14px 6px rgba(57,255,20,.9)}
@@ -308,7 +318,7 @@ var FK={ // ชนิดของจุดบนแผนที่เดิน�
 };
 function K_(k){return FK[k]||FK.landmark} /* กันพังถ้าเครื่องเก่าเจอชนิดใหม่ที่ไม่รู้จัก */
 var HS={nonum:{t:'ไม่มีบ้านเลขที่',c:'#b5412d',f:'#fff'},unk:{t:'ไม่ทราบบ้านเลขที่',c:'#8e5de0',f:'#fff'},ok:{t:'บ้านปกติ',c:'#f2c01e',f:'#222'},ruin:{t:'บ้านร้าง',c:'#9aa0a6',f:'#222'}};
-var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},kin:'',full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true};
+var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},kin:'',find:null,full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true};
 var notes=[],snips=[],feats=[],people=[],rels=[];
 
 // ============ ยูทิลิตี ============
@@ -683,6 +693,20 @@ function quickHouse(ll){
  createFeat('house',ll,{no:no,status:stt,kin:kn});st.quick.no=nextNo(no);st.quick.status=stt;
  toast(dup?'ปักบ้าน '+no+' แล้ว (เลขที่นี้มีอยู่แล้ว ซ้ำ ดูในรายการ “ต้องตรวจ”)':'ปักบ้าน '+(no||'ไม่มีเลขที่')+' แล้ว');
  drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}}
+/* ---- ค้นหาแล้วชี้ตำแหน่ง ---- */
+function findSet(){var f=featOf(st.find);if(!f||f.hidden)return [];
+ if(f.kind==='house'&&f.no){var k=nno(f.no);return feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.no&&nno(x.no)===k})}return [f]}
+function findIcon(){return L.divIcon({className:'',html:'<div class="fr"><i></i><i></i><b></b><span class="fa">▼</span></div>',iconSize:[72,72],iconAnchor:[36,36]})}
+/* หาจุดนี้: เปิดรายละเอียด ซูมไปที่จุด และขึ้นวงแหวนชมพู (ถ้าชนิดนี้ถูกซ่อนด้วยตัวกรอง จะล้างตัวกรองให้เห็นก่อน) */
+function findFeat(f){if(!f)return;if(!visK(f.kind))st.only={};st.find=f.id;st.fsel=f.id;st.mt='detail';drawMap();mapSide();flyTo(f)}
+/* เปลี่ยนชนิดของจุด เช่น บ้าน → ร้านค้า (ข้อมูลเดิมเก็บไว้ครบ เปลี่ยนกลับได้ · ข้ามรูปแบบจุด/พื้นที่/เส้นไม่ได้) */
+function changeKind(f,nk){if(!f||!FK[nk]||nk===f.kind||!canTag())return;
+ if(K_(f.kind).geom!==FK[nk].geom)return toast('เปลี่ยนข้ามรูปแบบไม่ได้ (จุด / พื้นที่ / เส้น)');
+ var old={kind:f.kind,title:f.title,no:f.no,status:f.status};
+ if(f.kind==='house'&&!f.title&&f.no)f.title='เลขที่ '+f.no;
+ f.kind=nk;if(nk==='house'){f.no=f.no||'';f.status=f.status||'unk'}
+ f.hist.push('เปลี่ยนชนิดจาก “'+K_(old.kind).t+'” เป็น “'+FK[nk].t+'” · '+me()+' · '+now());save();drawMap();mapSide();
+ toast('เปลี่ยนเป็น “'+FK[nk].t+'” แล้ว',function(){f.kind=old.kind;f.title=old.title;f.no=old.no;f.status=old.status;f.hist.push('เลิกเปลี่ยนชนิด · '+me()+' · '+now());save();drawMap();mapSide()})}
 function selectFeat(id){st.fsel=id;st.mt='detail';drawMap();mapSide()}
 function flyTo(f){if(!map)return;if(K_(f.kind).geom==='point')map.flyTo(f.coords,19);else map.fitBounds(L.latLngBounds(f.coords))}
 function drawMap(){
@@ -701,12 +725,17 @@ function drawMap(){
    lay.on('dragend',function(e){var p=e.target.getLatLng();f.coords=[p.lat,p.lng];f.hist.push('ย้ายตำแหน่ง · '+me()+' · '+now());save();setTimeout(drawMap,0)})}
   else if(k.geom==='line'){lay=L.polyline(f.coords,{color:k.c,weight:sel?7:4,opacity:dim?.25:.9})}
   else{lay=L.polygon(f.coords,{color:k.c,weight:sel?4:2,opacity:dim?.25:1,fillColor:k.c,fillOpacity:dim?k.fill/4:k.fill,dashArray:f.kind==='boundary'?'6 5':null})}
-  lay.on('click',function(ev){if(active)return;L.DomEvent.stopPropagation(ev);if(st.full)return showPop(f,ev.latlng);selectFeat(f.id)});
+  lay.on('click',function(ev){if(active)return;L.DomEvent.stopPropagation(ev);if(st.full)return showPop(f,ev.latlng);st.find=null;selectFeat(f.id)});
   lay.bindTooltip(esc(featLabel(f)+(f.who?' · '+f.who:''))+((st.relHi&&f.no&&st.relHi.names[nno(f.no)])?'<br>👪 '+st.relHi.names[nno(f.no)].map(esc).join('<br>👪 '):''),{direction:'top',offset:[0,-6]});
   /* บ้านและรูปทรงพื้นที่วาดตรงๆ · จุดอื่นๆ เข้ากลุ่มรวมถ้าซ้อนกัน · จุดที่เลือกอยู่/ที่เรืองแสงเครือญาติ ไม่ถูกรวม */
   if(k.geom==='point'&&f.kind!=='house'&&!sel)lay.addTo(cl);else lay.addTo(grp)});
  if(visK('notes'))snips.filter(function(s){return s.loc&&(!st.mw||has(s,st.mw))}).forEach(function(s){var m=L.marker(s.loc,{icon:noteIcon(s,kinOn)});m.on('click',function(){if(active)return;openSnip(s.id)});m.bindTooltip(esc(s.text.slice(0,50)+'…'));m.addTo(cl)});
- drawRelLines(RE);renderRL(RE);var hc=$('hlClear');if(hc)hc.style.display=(st.kin||st.relHi)?'block':'none';
+ /* ผลค้นหา: วงแหวนสีชมพูกะพริบ + ลูกศร + ป้ายชื่อ บนจุดที่หา (บ้านเลขที่ซ้ำกันขึ้นทุกหมุด) · ล้างด้วยปุ่มล่างแผนที่ / Esc / กดหมุดอื่น */
+ if(st.find){findSet().forEach(function(f){var g=K_(f.kind).geom;
+  if(g==='point'){var fm=L.marker(f.coords,{icon:findIcon(),interactive:false,keyboard:false,zIndexOffset:3000});fm.bindTooltip(esc(featLabel(f)),{permanent:true,direction:'bottom',offset:[0,34],className:'ftip'});fm.addTo(grp)}
+  else if(g==='line')L.polyline(f.coords,{color:'#ff2d95',weight:10,opacity:.95,interactive:false}).addTo(grp);
+  else L.polygon(f.coords,{color:'#ff2d95',weight:8,fillColor:'#ff2d95',fillOpacity:.18,interactive:false}).addTo(grp)})}
+ drawRelLines(RE);renderRL(RE);var hc=$('hlClear');if(hc){var any=st.kin||st.relHi||st.find;hc.style.display=any?'block':'none';hc.textContent=(st.find&&!st.kin&&!st.relHi)?'✕ ล้างการค้นหา':'✕ ล้างไฮไลต์ทั้งหมด'}
  $('map').classList.toggle('small',map.getZoom()<17);renderFloat()}
 
 // ---- เส้นความสัมพันธ์บนแผนที่ ----
@@ -798,7 +827,7 @@ document.addEventListener('click',function(e){
  if(t.closest('[data-onlyclear]')){st.only={};drawMap();return mapSide()}
  if(b=t.closest('[data-kinpick]')){st.kin=(st.kin===b.dataset.kinpick)?'':b.dataset.kinpick;if(st.kin)st.relHi=null;drawMap();return mapSide()}
  if(b=t.closest('[data-relhi]')){setRelHi(b.dataset.relhi,false);drawMap();mapSide();return rhFit()}
- if(t.closest('[data-hlclear]')){st.kin='';st.relHi=null;drawMap();return mapSide()}
+ if(t.closest('[data-hlclear]')){st.kin='';st.relHi=null;st.find=null;drawMap();return mapSide()}
  if(t.closest('[data-relhiclear]')){st.relHi=null;drawMap();return mapSide()}
  if(b=t.closest('[data-demorel]')){setRelHi(b.dataset.demorel,true);drawMap();mapSide();return rhFit()}
  if(t.closest('[data-rhfit]'))return rhFit();
@@ -852,6 +881,8 @@ function detailTab(){
  var f=featOf(st.fsel);if(!f||f.hidden)return '<div class="muted">แตะหมุดหรือรูปทรงบนแผนที่เพื่อดูและแก้ไข</div>';
  var K=K_(f.kind),ed=canTag(),dis=ed?'':' disabled';
  var h='<h3 style="margin-top:0">'+(K.i?K.i+' ':'')+K.t+'</h3><div class="muted">โดย '+esc(f.by)+' · '+esc(f.at)+'</div>';
+ var kinds=Object.keys(FK).filter(function(k){return FK[k].geom===K.geom});
+ if(ed&&kinds.length>1)h+='<label class="l">ชนิดของจุดนี้ (เปลี่ยนได้ เลิกทำได้)</label><select class="f" id="fKindSel">'+kinds.map(function(k){return '<option value="'+k+'"'+(k===f.kind?' selected':'')+'>'+(FK[k].i?FK[k].i+' ':'')+FK[k].t+'</option>'}).join('')+'</select>';
  if(f.kind==='house'){h+='<label class="l">เลขที่บ้าน</label><input class="f" id="fT" value="'+esc(f.no)+'" placeholder="เว้นว่างได้ถ้าไม่มีเลขที่"'+dis+'>';
   h+='<div class="row2"><div style="flex:1"><label class="l">สถานะบ้าน</label><select class="f" id="fS"'+dis+'>'+Object.keys(HS).map(function(k){return '<option value="'+k+'"'+(f.status===k?' selected':'')+'>'+HS[k].t+'</option>'}).join('')+'</select></div><div style="flex:1"><label class="l">แบบสอบถาม</label><label style="display:flex;gap:5px;align-items:center;margin:6px 0;font-size:13px"><input type="checkbox" id="fIv"'+(f.iv?' checked':'')+dis+'>สัมภาษณ์แล้ว</label></div></div>';
   var ak=Object.keys(allKins());
@@ -884,7 +915,7 @@ $('mapQ').addEventListener('input',function(){var qp=qparse(this.value);if(!qp.q
  var r=feats.map(function(f){return {f:f,sc:featScore(f,qp)}}).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc});
  var hm=qp.isNo?'<div class="item" data-hm="'+esc(qp.hq)+'"><b>📇 เปิดข้อมูลบ้านเลขที่ '+esc(qp.hq)+'</b> <span class="muted">รวมทุกอย่างของบ้านนี้</span></div>':'';
  $('mapQRes').innerHTML=hm+(r.length?r.slice(0,8).map(function(x){return '<div class="item" data-fsel="'+x.f.id+'">'+featIcon(x.f)+'<b>'+esc(featLabel(x.f))+'</b> <span class="muted">'+esc(x.f.kind==='house'?HS[x.f.status].t:K_(x.f.kind).t)+'</span></div>'}).join('')+(r.length>8?'<div class="muted">…อีก '+(r.length-8)+' พิมพ์ให้เจาะจงขึ้น</div>':''):'<div class="muted" style="padding:6px 0">ไม่พบ “'+esc(this.value)+'” บนแผนที่</div>')});
-$('mapQRes').addEventListener('click',function(e){var fs=e.target.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff){selectFeat(ff.id);flyTo(ff)}}});
+$('mapQRes').addEventListener('click',function(e){var fs=e.target.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff)findFeat(ff)}});
 $('msBody').addEventListener('click',function(e){
  var t=e.target;
  var pp=t.closest('[data-pp]');if(pp)return openPerson(pp.dataset.pp);
@@ -892,7 +923,7 @@ $('msBody').addEventListener('click',function(e){
  var mw=t.closest('[data-mw]');if(mw){st.mw=+mw.dataset.mw;drawMap();return mapSide()}
  var pk=t.closest('[data-pk]');if(pk){st.pick=pk.dataset.pk;drawMap();return toast('แตะบนแผนที่ตรงตำแหน่งของโน้ตนี้')}
  var fl=t.closest('[data-fly]');if(fl){var sn=snipOf(fl.dataset.fly);if(sn&&sn.loc)map.flyTo(sn.loc,19);return openSnip(sn.id)}
- var fs=t.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff){selectFeat(ff.id);flyTo(ff)}return}
+ var fs=t.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff)findFeat(ff);return}
  var b=t.closest('[data-fa]');if(!b)return;var a=b.dataset.fa,f=st.fsel?featOf(st.fsel):null;
  if(a==='add'){st.draw={kind:$('fKind').value};st.pts=[];if(st.quick)st.quick.on=false;tmp.clearLayers();drawMap();return}
  if(a==='qstart'){st.quick.on=true;st.quick.no=$('qNo').value.trim();st.quick.status=$('qSt').value;st.quick.kin=$('qKin').value;st.draw=null;drawMap();mapSide();var q=$('qNo');if(q){q.focus();q.select()}return}
@@ -913,7 +944,7 @@ $('msBody').addEventListener('click',function(e){
 });
 $('msBody').addEventListener('input',function(e){if(e.target.id!=='rhQ')return;var q=e.target.value.trim(),qp=qparse(q);
  $('rhRes').innerHTML=q?(pLive().filter(function(x){return relHit(x,qp)}).slice(0,6).map(function(x){return '<div class="item" style="cursor:pointer" data-relhi="'+x.id+'">👤 '+pBrief(x)+' <span class="muted">· '+relCount(x.id)+' ความสัมพันธ์</span></div>'}).join('')||'<div class="muted">ไม่พบ</div>'):''});
-$('msBody').addEventListener('change',function(e){var t=e.target;if(t.id==='rhAll'&&st.relHi){st.relHi.all=t.checked;drawMap();return mapSide()}
+$('msBody').addEventListener('change',function(e){var t=e.target;if(t.id==='fKindSel')return changeKind(featOf(st.fsel),t.value);if(t.id==='rhAll'&&st.relHi){st.relHi.all=t.checked;drawMap();return mapSide()}
  if(t.dataset.fvis){st.fvis[t.dataset.fvis]=t.checked;drawMap();return mapSide()}
  if(t.id==='fPh'){var f=featOf(st.fsel);if(!f)return;readPhotos(t.files,function(ph){ph.forEach(function(p){f.photos.push(p)});f.hist.push('เพิ่มรูป '+ph.length+' รูป · '+me()+' · '+now());save();mapSide();toast('เพิ่มรูปแล้ว')})}});
 
@@ -933,7 +964,7 @@ function linkChips(s,rm){var o=[];
  (s.fids||[]).forEach(function(id){var f=featOf(id);if(f&&!f.hidden)o.push('<span class="lk"><span'+(rm?' data-m="gofeat" data-fid="'+id+'" style="cursor:pointer" title="ดูบนแผนที่"':'')+'>'+featIcon(f)+esc(featLabel(f))+'</span>'+(rm?'<button data-m="unlink" data-fid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
  (s.pids||[]).forEach(function(id){var p=personOf(id);if(p&&!p.hidden)o.push('<span class="lk p"><span'+(rm?' data-m="gop" data-pid="'+id+'" style="cursor:pointer" title="เปิดหน้าบุคคล"':'')+'>👤 '+esc(p.name)+'</span>'+(rm?'<button data-m="punlink" data-pid="'+id+'" title="เลิกผูก">✕</button>':'')+'</span>')});
  return o.join('')}
-function goFeat(id){var f=featOf(id);closeModal();st.fsel=id;st.mt='detail';st.view='map';render();if(f)setTimeout(function(){flyTo(f)},200)}
+function goFeat(id){var f=featOf(id);closeModal();st.fsel=id;st.mt='detail';st.view='map';if(f){if(!visK(f.kind))st.only={};st.find=id}render();if(f)setTimeout(function(){flyTo(f)},200)}
 function refreshView(){renderNav();if(st.view==='map'){drawMap();mapSide()}else VIEWS[st.view]()}
 
 // ---- ตรวจจับ “พูดถึง” ในข้อความ (เสนอให้ผูก ไม่ผูกให้เอง) ----
@@ -989,7 +1020,7 @@ GQ.addEventListener('input',showSearch);GQ.addEventListener('focus',showSearch);
 GQ.addEventListener('keydown',function(e){if(e.key==='Escape'){$('sres').style.display='none';GQ.blur()}if(e.key==='Enter'){var f=$('sres').querySelector('[data-sr],[data-hm]');if(f)f.click()}});
 document.addEventListener('click',function(e){if(!e.target.closest('.search'))$('sres').style.display='none'});
 document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();
- if($('lb').classList.contains('on')){if(e.key==='Escape'){e.preventDefault();return lbClose()}if(e.key==='ArrowLeft')return lbStep(-1);if(e.key==='ArrowRight')return lbStep(1);return}if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape'){if($('modal').style.display!=='none')closeModal();else if(st.view==='map'&&(st.kin||st.relHi)&&!st.pick&&!st.draw&&!(st.quick&&st.quick.on)){st.kin='';st.relHi=null;drawMap();mapSide()}}});
+ if($('lb').classList.contains('on')){if(e.key==='Escape'){e.preventDefault();return lbClose()}if(e.key==='ArrowLeft')return lbStep(-1);if(e.key==='ArrowRight')return lbStep(1);return}if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape'){if($('modal').style.display!=='none')closeModal();else if(st.view==='map'&&(st.kin||st.relHi||st.find)&&!st.pick&&!st.draw&&!(st.quick&&st.quick.on)){st.kin='';st.relHi=null;st.find=null;drawMap();mapSide()}}});
 $('sres').addEventListener('click',function(e){var b=e.target.closest('[data-sr]');if(!b)return;var k=b.dataset.sr.split('|'),id=k[1];$('sres').style.display='none';
  if(k[0]==='f')return goFeat(id);if(k[0]==='p')return openPerson(id);if(k[0]==='s')return openSnip(id);
  if(k[0]==='all'){st.f={wi:0,status:'',q:GQ.value.trim(),flag:false,multi:false};closeModal();go('pool')}});
