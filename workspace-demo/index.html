@@ -193,6 +193,7 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 #v-map.full #mapStats,#v-map.full #mapSide{display:none}
 #v-map.full #mapFloat{display:flex}
 #v-map.full .leaflet-top.leaflet-right{top:150px}
+#hlClear{position:absolute;left:50%;transform:translateX(-50%);bottom:24px;z-index:1250;display:none;background:#39ff14;color:#06240a;border:0;border-radius:99px;padding:7px 16px;font-weight:700;box-shadow:var(--sh2);cursor:pointer}
 #mapFullBtn{position:absolute;left:10px;bottom:24px;z-index:1200;box-shadow:var(--sh2)}
 #v-map.full #mapFullBtn{display:none}
 .rg{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:5px 0}
@@ -247,7 +248,7 @@ code{background:var(--chip);padding:1px 6px;border-radius:6px}
 </header>
 <nav id="nav"></nav>
 <div id="view"></div>
-<div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><div id="mapFloat"></div><button id="mapFullBtn" class="primary" title="ซ่อนแผงด้านข้าง เหลือแต่แผนที่">⛶ โหมดแผนที่อย่างเดียว</button><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
+<div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><button id="hlClear" data-hlclear="1" title="ปิดไฮไลต์เขียวนีออนทั้งหมด (หรือกด Esc)">✕ ล้างไฮไลต์ทั้งหมด</button><div id="mapFloat"></div><button id="mapFullBtn" class="primary" title="ซ่อนแผงด้านข้าง เหลือแต่แผนที่">⛶ โหมดแผนที่อย่างเดียว</button><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
 <div class="modal" id="modal"><div class="mp" id="mbody"></div></div>
 <div class="toast" id="toast"></div>
 
@@ -688,7 +689,7 @@ function drawMap(){
   /* บ้านและรูปทรงพื้นที่วาดตรงๆ · จุดอื่นๆ เข้ากลุ่มรวมถ้าซ้อนกัน · จุดที่เลือกอยู่/ที่เรืองแสงเครือญาติ ไม่ถูกรวม */
   if(k.geom==='point'&&f.kind!=='house'&&!sel)lay.addTo(cl);else lay.addTo(grp)});
  if(visK('notes'))snips.filter(function(s){return s.loc&&(!st.mw||has(s,st.mw))}).forEach(function(s){var m=L.marker(s.loc,{icon:noteIcon(s,kinOn)});m.on('click',function(){if(active)return;openSnip(s.id)});m.bindTooltip(esc(s.text.slice(0,50)+'…'));m.addTo(cl)});
- drawRelLines(RE);renderRL(RE);
+ drawRelLines(RE);renderRL(RE);var hc=$('hlClear');if(hc)hc.style.display=(st.kin||st.relHi)?'block':'none';
  $('map').classList.toggle('small',map.getZoom()<17);renderFloat()}
 
 // ---- เส้นความสัมพันธ์บนแผนที่ ----
@@ -780,6 +781,7 @@ document.addEventListener('click',function(e){
  if(t.closest('[data-onlyclear]')){st.only={};drawMap();return mapSide()}
  if(b=t.closest('[data-kinpick]')){st.kin=(st.kin===b.dataset.kinpick)?'':b.dataset.kinpick;if(st.kin)st.relHi=null;drawMap();return mapSide()}
  if(b=t.closest('[data-relhi]')){setRelHi(b.dataset.relhi,false);drawMap();mapSide();return rhFit()}
+ if(t.closest('[data-hlclear]')){st.kin='';st.relHi=null;drawMap();return mapSide()}
  if(t.closest('[data-relhiclear]')){st.relHi=null;drawMap();return mapSide()}
  if(b=t.closest('[data-demorel]')){setRelHi(b.dataset.demorel,true);drawMap();mapSide();return rhFit()}
  if(t.closest('[data-rhfit]'))return rhFit();
@@ -969,7 +971,7 @@ function showSearch(){var q=GQ.value,box=$('sres');if(!q.trim()){box.style.displ
 GQ.addEventListener('input',showSearch);GQ.addEventListener('focus',showSearch);
 GQ.addEventListener('keydown',function(e){if(e.key==='Escape'){$('sres').style.display='none';GQ.blur()}if(e.key==='Enter'){var f=$('sres').querySelector('[data-sr],[data-hm]');if(f)f.click()}});
 document.addEventListener('click',function(e){if(!e.target.closest('.search'))$('sres').style.display='none'});
-document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape')closeModal()});
+document.addEventListener('keydown',function(e){var tg=(e.target.tagName||'').toLowerCase();if((e.key==='/'&&tg!=='input'&&tg!=='textarea'&&tg!=='select')||((e.ctrlKey||e.metaKey)&&e.key==='k')){e.preventDefault();GQ.focus();GQ.select()}if(e.key==='Escape'){if($('modal').style.display!=='none')closeModal();else if(st.view==='map'&&(st.kin||st.relHi)&&!st.pick&&!st.draw&&!(st.quick&&st.quick.on)){st.kin='';st.relHi=null;drawMap();mapSide()}}});
 $('sres').addEventListener('click',function(e){var b=e.target.closest('[data-sr]');if(!b)return;var k=b.dataset.sr.split('|'),id=k[1];$('sres').style.display='none';
  if(k[0]==='f')return goFeat(id);if(k[0]==='p')return openPerson(id);if(k[0]==='s')return openSnip(id);
  if(k[0]==='all'){st.f={wi:0,status:'',q:GQ.value.trim(),flag:false,multi:false};closeModal();go('pool')}});
