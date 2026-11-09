@@ -11,6 +11,7 @@
  *   push         { changes:[{ t, id, base, data }] } → ผลรายการ ok / conflict (มีคนแก้ก่อน คืนฉบับเซิร์ฟเวอร์) / rejected / toolarge
  *   uploadPhoto  { mime, b64 } → { id }          photo { id } → { mime, b64 }   (เฉพาะไฟล์ในโฟลเดอร์รูปของระบบนี้)
  *   codes / addCode / revokeCode  (admin เท่านั้น)
+ *   purge        { t: feats|people|rels, id, base, label } → ลบถาวรรายการที่ซ่อนอยู่แล้ว (admin เท่านั้น) · แถวเหลือแค่ id + purged
  *
  * ไม่มีรหัสใดอยู่ในโค้ดนี้ · ห้ามใส่ข้อมูลจริงใน repo สาธารณะ
  */
@@ -94,6 +95,9 @@ function doPost(e) {
       case "push": return json_(push_(user, body));
       case "uploadPhoto": return json_(uploadPhoto_(user, body));
       case "photo": return json_(photo_(body));
+      case "purge":
+        if (user.role !== "admin") return json_({ ok: false, error: "เฉพาะผู้ดูแล" });
+        return json_(purge_(user, body));
       case "codes": case "addCode": case "revokeCode":
         if (user.role !== "admin") return json_({ ok: false, error: "เฉพาะผู้ดูแล" });
         return json_(adminAction_(user, body));
@@ -181,6 +185,54 @@ function push_(user, body) {
     appended.forEach((a) => tab_(a[0]).appendRow(a[1]));
     props.setProperty("LAST", String(last));
     return { ok: true, now: last, results: results };
+  } finally { lock.releaseLock(); }
+}
+
+// ---------------------------------------------------------------- ลบถาวร (เฉพาะผู้ดูแล · เฉพาะรายการที่ "ซ่อน" ไว้แล้ว)
+// แถวไม่ถูกลบออกจากชีต แต่เนื้อหาถูกแทนด้วย {"id":..,"purged":1} (rev เพิ่ม) เพื่อให้เครื่องอื่นที่ดึงข้อมูลแบบเพิ่มทีละส่วนรู้ว่าต้องลบ
+// รูปของหมุดถูกย้ายไปถังขยะของ Drive (กู้ได้ 30 วัน) · บันทึกว่าใครลบอะไรไว้ในแท็บ purge_log
+const PURGEABLE = ["feats", "people", "rels"];
+const PURGE_LOG = "purge_log";
+function purge_(user, body) {
+  const t = String(body.t || ""), id = String(body.id || "");
+  if (PURGEABLE.indexOf(t) < 0 || !id || id.length > 40) return { ok: false, error: "รูปแบบไม่ถูกต้อง" };
+  const lock = LockService.getScriptLock();
+  lock.waitLock(25000);
+  try {
+    const sh = tab_(t), n = sh.getLastRow() - 1;
+    let hit = -1, vals = [];
+    if (n > 0) { vals = sh.getRange(2, 1, n, 5).getValues(); for (let i = 0; i < n; i++) if (String(vals[i][0]) === id) { hit = i; break; } }
+    if (hit < 0) return { ok: false, error: "ไม่พบรายการนี้" };
+    const r = vals[hit];
+    let d = {};
+    try { d = JSON.parse(String(r[4])); } catch (er) {}
+    if (d && d.purged) return { ok: true, already: true, rev: Number(r[1]), at: Number(r[2]), now: Number(props_().getProperty("LAST") || 0), trashed: 0 };
+    if (Number(body.base) !== Number(r[1])) return { ok: false, code: "stale", error: "มีคนแก้รายการนี้ก่อน ลองใหม่อีกครั้ง" };
+    if (d.hidden !== true) return { ok: false, error: "ต้องกด “ซ่อน” รายการนี้ก่อน จึงลบถาวรได้" };
+    if (d.mergedInto) return { ok: false, error: "รายการนี้ถูกรวมไว้ ต้องกดยกเลิกการรวมก่อน" };
+    let trashed = 0;
+    if (t === "feats" && Array.isArray(d.photos)) {
+      d.photos.forEach((p) => {
+        const m = /^drive:([\w-]{10,80})$/.exec(String(p));
+        if (!m) return;
+        try {
+          const file = DriveApp.getFileById(m[1]), want = props_().getProperty("FOLDER_ID"), ps = file.getParents();
+          let inside = false;
+          while (ps.hasNext()) if (ps.next().getId() === want) inside = true;
+          if (inside) { file.setTrashed(true); trashed++; }
+        } catch (er) {}
+      });
+    }
+    const props = props_();
+    const last = Math.max(Date.now(), Number(props.getProperty("LAST") || 0) + 1);
+    const rev = Number(r[1]) + 1;
+    sh.getRange(hit + 2, 1, 1, 5).setValues([[id, rev, last, user.name, JSON.stringify({ id: id, purged: 1 })]]);
+    props.setProperty("LAST", String(last));
+    const ss = ss_();
+    let lg = ss.getSheetByName(PURGE_LOG);
+    if (!lg) { lg = ss.insertSheet(PURGE_LOG); lg.getRange(1, 1, 1, 6).setValues([["time", "by", "table", "id", "label", "photos_trashed"]]); lg.setFrozenRows(1); }
+    lg.appendRow([new Date().toISOString(), user.name, t, id, String(body.label || "").slice(0, 80), trashed]);
+    return { ok: true, rev: rev, at: last, now: last, trashed: trashed };
   } finally { lock.releaseLock(); }
 }
 
