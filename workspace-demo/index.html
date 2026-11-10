@@ -148,6 +148,7 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .row2{display:flex;gap:8px;margin-top:6px}
 .hl{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;line-height:1;border-radius:5px;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.6);padding:0 3px;white-space:nowrap;height:18px}
 .hl.iv{box-shadow:0 0 0 3px #2ecc71,0 1px 3px rgba(0,0,0,.6)}
+.hl.dem{border-style:dashed;text-decoration:line-through;opacity:.88}
 .hl.sel{outline:3px solid #ffd23f}
 .pl{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:#fff;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.65);font-size:14px}
 .pl.sel{outline:3px solid #ffd23f}
@@ -207,6 +208,18 @@ label.l{display:block;font-size:12.5px;color:var(--mute);margin:12px 0 4px;font-
 .mfchip.kin.on{background:#39ff14;color:#06240a;border-color:#39ff14}
 .mfchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 #mapBody{position:relative}
+#mapTools{position:absolute;left:54px;top:10px;z-index:1250;display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;max-width:calc(100% - 70px)}
+#mapTools input{width:min(180px,36vw);border-radius:10px;box-shadow:var(--sh2);font-size:16px}
+#mtEdit{box-shadow:var(--sh2);background:var(--panel);font-weight:600}
+#mtEdit.on{background:#ff9800;color:#1d1200;border-color:#ff9800}
+#mapQFRes{position:absolute;top:100%;left:0;margin-top:4px;width:min(320px,86vw);background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--sh2);max-height:46vh;overflow:auto;padding:4px 6px;display:none}
+#mapQFRes:not(:empty){display:block}
+#mapQFRes .item{cursor:pointer;padding:6px 4px;border-radius:8px}
+#mapQFRes .item:hover{background:var(--accent-soft)}
+#v-map.full #mapTools{top:auto;bottom:24px;left:10px;max-width:calc(100% - 20px)}
+#v-map.full #mapQFRes{top:auto;bottom:100%;margin:0 0 4px}
+#map.editing::after{content:'';position:absolute;inset:0;border:4px solid #ff9800;pointer-events:none;z-index:900}
+@media (max-width:820px){.hint{top:56px}}
 #mapFloat{position:absolute;left:10px;right:56px;top:10px;z-index:1200;display:none;flex-wrap:wrap;gap:6px;align-items:center;pointer-events:none}
 #mapFloat>*{pointer-events:auto}
 #mapFloat .mfbox{display:flex;flex-wrap:nowrap;gap:6px;background:color-mix(in srgb,var(--panel) 92%,transparent);padding:6px 8px;border-radius:14px;box-shadow:var(--sh2);max-width:100%;overflow-x:auto;scrollbar-width:thin}
@@ -331,7 +344,7 @@ code{background:var(--chip);padding:1px 6px;border-radius:6px}
 </header>
 <nav id="nav"></nav>
 <div id="view"></div>
-<div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><button id="hlClear" data-hlclear="1" title="ปิดไฮไลต์เขียวนีออนทั้งหมด (หรือกด Esc)">✕ ล้างไฮไลต์ทั้งหมด</button><div id="mapFloat"></div><button id="mapFullBtn" class="primary" title="ซ่อนแผงด้านข้าง เหลือแต่แผนที่">⛶ โหมดแผนที่อย่างเดียว</button><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
+<div id="v-map"><div id="mapStats"></div><div id="mapBody"><div id="map" style="position:relative"></div><button id="hlClear" data-hlclear="1" title="ปิดไฮไลต์เขียวนีออนทั้งหมด (หรือกด Esc)">✕ ล้างไฮไลต์ทั้งหมด</button><div id="mapTools"><input id="mapQF" type="search" placeholder="🔍 หาบ้านเลขที่" autocomplete="off" enterkeyhint="search"><button id="mtEdit" type="button"></button><div id="mapQFRes"></div></div><div id="mapFloat"></div><button id="mapFullBtn" class="primary" title="ซ่อนแผงด้านข้าง เหลือแต่แผนที่">⛶ โหมดแผนที่อย่างเดียว</button><div id="mapSide"><div class="mapsearch"><input id="mapQ" type="search" placeholder="🔍 หาบ้านเลขที่หรือชื่อจุดบนแผนที่ เช่น 21" autocomplete="off"><div id="mapQRes"></div></div><div class="mtabs" id="mtabs"></div><div id="msBody"></div></div></div></div>
 <div class="modal" id="modal"><div class="mp" id="mbody"></div></div>
 <div class="lb" id="lb"><button class="lbx" data-lb="close" title="ปิด (Esc)">✕</button><button class="lbn pv" data-lb="prev" title="รูปก่อนหน้า (←)">‹</button><div id="lbm"></div><button class="lbn nx" data-lb="next" title="รูปถัดไป (→)">›</button><div class="lbbar" id="lbbar"></div></div>
 <div class="toast" id="toast"></div>
@@ -357,6 +370,7 @@ var FK={ // ชนิดของจุดบนแผนที่เดิน�
  house:{t:'บ้าน',geom:'point'},
  shop:{t:'ร้านค้า',i:'🛒',c:'#c77dd6',geom:'point'},
  florist:{t:'ร้านดอกไม้',i:'💐',c:'#e0589b',geom:'point'},
+ barn:{t:'ยุ้งข้าว',i:'🌾',c:'#b7791f',geom:'point',svg:'<svg viewBox="0 0 24 24" width="17" height="17"><path d="M2.5 11.5 12 3.5l9.5 8z" fill="#fff"/><rect x="5.5" y="11.5" width="13" height="6" fill="#fff"/><rect x="10" y="13" width="4" height="4.5" fill="#b7791f"/><rect x="6.5" y="17.5" width="2" height="4.5" fill="#fff"/><rect x="15.5" y="17.5" width="2" height="4.5" fill="#fff"/></svg>'},
  temple:{t:'วัด / ที่ศักดิ์สิทธิ์',i:'🛕',c:'#e8741f',geom:'point'}, /* รายการเก่าที่เคยบันทึกเป็น วัด/ศาล ยังอยู่ที่ชนิดนี้ */
  shrine:{t:'ศาล',i:'⛩️',c:'#c2410c',geom:'point'},
  asm:{t:'บ้าน อสม.',i:'🩺',c:'#0e9f9f',geom:'point',who:true},
@@ -378,8 +392,9 @@ function K_(k){return FK[k]||FK.landmark}
 /* ชนิดของจุด โดยเดารูปแบบจากพิกัดเมื่อเป็นชนิดที่เว็บรุ่นนี้ยังไม่รู้จัก (ไม่ให้แผนที่พังเมื่อมีชนิดใหม่จากรุ่นหน้า) */
 function kOf(f){return FK[f.kind]||(Array.isArray(f.coords&&f.coords[0])?{t:'พื้นที่',c:'#888888',geom:'poly',fill:.2}:FK.landmark)}
 var ZPAL=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e84393','#95a5a6','#ffffff']; /* กันพังถ้าเครื่องเก่าเจอชนิดใหม่ที่ไม่รู้จัก */
-var HS={nonum:{t:'ไม่มีบ้านเลขที่',c:'#b5412d',f:'#fff'},unk:{t:'ไม่ทราบบ้านเลขที่',c:'#8e5de0',f:'#fff'},ok:{t:'บ้านปกติ',c:'#f2c01e',f:'#222'},ruin:{t:'บ้านร้าง',c:'#9aa0a6',f:'#222'}};
-var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},hide:{},kin:'',find:null,full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true};
+var HS={nonum:{t:'ไม่มีบ้านเลขที่',c:'#b5412d',f:'#fff'},unk:{t:'ไม่ทราบบ้านเลขที่',c:'#8e5de0',f:'#fff'},ok:{t:'บ้านปกติ',c:'#f2c01e',f:'#222'},ruin:{t:'บ้านร้าง',c:'#9aa0a6',f:'#222'},demo:{t:'รื้อถอนแล้ว (เคยมีเลขที่)',c:'#4b5563',f:'#fff'}};
+function HSt(f){return (HS[f.status]||HS.unk).t}
+var st={role:'admin',lead:3,view:'pool',f:{wi:0,status:'',q:'',flag:false,multi:false},tw:3,ow:3,mw:0,pick:null,mt:'layers',fsel:null,only:{},hide:{},kin:'',find:null,full:false,rl:{open:false,on:true,all:false,types:{parent:true,spouse:true,sibling:true,other:true}},quick:null,draw:null,pts:[],mask:true,edit:false,editT:null};
 var notes=[],snips=[],feats=[],people=[],rels=[];
 
 // ============ ยูทิลิตี ============
@@ -716,8 +731,8 @@ function seedFeats(){
 }
 
 var map=null,grp=null,tmp=null;
-function houseIcon(f,sel,isKin,dim,me_,badge){var s=HS[f.status]||HS.unk;var t=f.no||'?';var w=Math.max(22,t.length*8+8);return L.divIcon({className:'',html:'<div class="hl'+(f.iv?' iv':'')+(sel?' sel':'')+(isKin?' kin':'')+(me_?' me':'')+(dim?' dim':'')+'" style="background:'+s.c+';color:'+s.f+';width:'+w+'px">'+esc(t)+(badge?'<span class="hg">'+esc(badge)+'</span>':'')+'</div>',iconSize:[w,18],iconAnchor:[w/2,9]})}
-function pinIcon(k,sel,dim){return L.divIcon({className:'',html:'<div class="pl'+(sel?' sel':'')+(dim?' dim':'')+'" style="background:'+k.c+'">'+k.i+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}
+function houseIcon(f,sel,isKin,dim,me_,badge){var s=HS[f.status]||HS.unk;var t=f.no||'?';var w=Math.max(22,t.length*8+8);return L.divIcon({className:'',html:'<div class="hl'+(f.status==='demo'?' dem':'')+(f.iv?' iv':'')+(sel?' sel':'')+(isKin?' kin':'')+(me_?' me':'')+(dim?' dim':'')+'" style="background:'+s.c+';color:'+s.f+';width:'+w+'px">'+esc(t)+(badge?'<span class="hg">'+esc(badge)+'</span>':'')+'</div>',iconSize:[w,18],iconAnchor:[w/2,9]})}
+function pinIcon(k,sel,dim){return L.divIcon({className:'',html:'<div class="pl'+(sel?' sel':'')+(dim?' dim':'')+'" style="background:'+k.c+'">'+(k.svg||k.i)+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}
 function noteIcon(s,dim){var w=s.wi[0];return L.divIcon({className:'',html:'<div class="pin'+(dim?' dim':'')+'" style="background:'+(w?WC[w]:'#666')+'">'+(w||'?')+(s.wi.length>1?'+':'')+'</div>',iconSize:[24,24],iconAnchor:[12,12]})}
 var cl=null,rlg=null,rlc=null;
 function clusterIcon(c){var n=c.getChildCount();return L.divIcon({className:'',html:'<div class="mc'+(st.kin?' dim':'')+'">'+n+'</div>',iconSize:[36,36]})}
@@ -788,8 +803,8 @@ function drawMap(){
   if(f.hidden||!visK(f.kind))return;var k=kOf(f),sel=f.id===st.fsel,lay;
   var lv=f.kind!=='house'?0:(st.kin&&kinsOf(f).indexOf(st.kin)>=0)?1:(st.relHi&&f.no&&st.relHi.map[nno(f.no)])||0;
   var isKin=lv>0,dim=kinOn&&!isKin;
-  if(k.geom==='point'){lay=L.marker(f.coords,{icon:f.kind==='house'?houseIcon(f,sel,isKin,dim,lv===2,houseBadge(f,RE)):pinIcon(k,sel,dim),draggable:canTag()&&!st.full,title:f.title||f.no,zIndexOffset:isKin?1000:(sel?500:0)});
-   lay.on('dragend',function(e){var p=e.target.getLatLng();f.coords=[p.lat,p.lng];f.hist.push('ย้ายตำแหน่ง · '+me()+' · '+now());save();setTimeout(drawMap,0)})}
+  if(k.geom==='point'){lay=L.marker(f.coords,{icon:f.kind==='house'?houseIcon(f,sel,isKin,dim,lv===2,houseBadge(f,RE)):pinIcon(k,sel,dim),draggable:canTag()&&!st.full&&st.edit,title:f.title||f.no,zIndexOffset:isKin?1000:(sel?500:0)});
+   lay.on('dragend',function(e){var old=f.coords.slice(),p=e.target.getLatLng();f.coords=[p.lat,p.lng];f.hist.push('ย้ายตำแหน่ง · '+me()+' · '+now());save();armEdit();setTimeout(drawMap,0);toast('ย้ายหมุดแล้ว',function(){f.coords=old;f.hist.push('เลิกย้ายตำแหน่ง · '+me()+' · '+now());save();drawMap()})})}
   else if(k.geom==='line'){lay=L.polyline(f.coords,{color:k.c,weight:sel?7:4,opacity:dim?.25:.9})}
   else{var pc=(f.kind==='zone'&&f.color)||k.c,fl=f.kind==='zone'?[0,.18,.38][f.fillLevel==null?1:f.fillLevel]:k.fill;
    lay=L.polygon(f.coords,{color:pc,weight:sel?4:(f.kind==='zone'?3:2),opacity:dim?.25:1,fillColor:pc,fillOpacity:dim?fl/4:fl,dashArray:f.kind==='boundary'?'6 5':null})}
@@ -805,7 +820,7 @@ function drawMap(){
   else if(g==='line')L.polyline(f.coords,{color:'#ff2d95',weight:10,opacity:.95,interactive:false}).addTo(grp);
   else L.polygon(f.coords,{color:'#ff2d95',weight:8,fillColor:'#ff2d95',fillOpacity:.18,interactive:false}).addTo(grp)})}
  drawRelLines(RE);renderRL(RE);var hc=$('hlClear');if(hc){var any=st.kin||st.relHi||st.find;hc.style.display=any?'block':'none';hc.textContent=(st.find&&!st.kin&&!st.relHi)?'✕ ล้างการค้นหา':'✕ ล้างไฮไลต์ทั้งหมด'}
- $('map').classList.toggle('small',map.getZoom()<17);renderFloat()}
+ $('map').classList.toggle('small',map.getZoom()<17);renderFloat();renderTools()}
 
 // ---- เส้นความสัมพันธ์บนแผนที่ ----
 /* ประเภท: พ่อแม่–ลูก (เส้นทึบ มีลูกศรชี้ไปทางลูก) · คู่สมรส (เส้นคู่สีเหลือง) · พี่น้อง (เส้นประฟ้า) · ญาติแบบอื่น (เส้นจุดขาว) */
@@ -883,9 +898,9 @@ function kinChips(){var m=allKins(),ks=Object.keys(m);if(!ks.length)return '';
 function renderFloat(){
  var fl=$('mapFloat');if(!fl)return;if(!st.full){fl.innerHTML='';return}
  fl.innerHTML='<div class="mfbox"><button class="primary" data-fullexit="1">✕ ออกจากโหมดแผนที่อย่างเดียว</button>'+(st.relHi?'<span style="align-self:center;font-size:13px">👪 ญาติของ <b>'+esc((personOf(st.relHi.pid)||{}).name||'')+'</b> · '+st.relHi.n+' หลัง</span><button class="mfchip kin on" data-relhiclear="1">✕ ปิดไฮไลต์</button>':'')+'</div><div class="mfbox">'+kindChips()+'</div>'+(kinChips()?'<div class="mfbox"><b style="font-size:12.5px;align-self:center">เครือญาติ:</b>'+kinChips()+(st.kin?'<button class="mfchip" data-kinpick="">✕ ปิด</button>':'')+'</div>':'')}
-function setFull(on){st.full=on;$('v-map').classList.toggle('full',on);if(on){if(st.quick)st.quick.on=false;st.pick=null;st.draw=null}drawMap();mapSide();setTimeout(function(){map&&map.invalidateSize()},50)}
+function setFull(on){st.full=on;if(on)setEdit(false,true);$('v-map').classList.toggle('full',on);if(on){if(st.quick)st.quick.on=false;st.pick=null;st.draw=null}drawMap();mapSide();setTimeout(function(){map&&map.invalidateSize()},50)}
 function showPop(f,ll){
- var K=K_(f.kind),h='<b>'+featEm(f)+esc(featLabel(f))+'</b><div class="muted">'+esc(f.kind==='house'?HS[f.status].t+(f.iv?' · สัมภาษณ์แล้ว':''):K.t)+'</div>';
+ var K=K_(f.kind),h='<b>'+featEm(f)+esc(featLabel(f))+'</b><div class="muted">'+esc(f.kind==='house'?HSt(f)+(f.iv?' · สัมภาษณ์แล้ว':''):K.t)+'</div>';
  if(f.who)h+='<div>เป็นใคร: '+esc(f.who)+'</div>';
  if(kinsOf(f).length)h+='<div>🌿 '+kinsOf(f).map(esc).join(', ')+'</div>';
  if(f.note)h+='<div>'+esc(f.note.slice(0,140))+'</div>';
@@ -912,12 +927,12 @@ document.addEventListener('click',function(e){
 
 // ---- แถบตัวเลข (Dashboard) ----
 function mapStats(){
- var hs=feats.filter(function(f){return !f.hidden&&f.kind==='house'});var c={};Object.keys(HS).forEach(function(k){c[k]=hs.filter(function(h){return h.status===k}).length});
+ var hsAll=feats.filter(function(f){return !f.hidden&&f.kind==='house'});var c={};Object.keys(HS).forEach(function(k){c[k]=hsAll.filter(function(h){return h.status===k}).length});var hs=hsAll.filter(function(h){return h.status!=='demo'});
  var iv=hs.filter(function(h){return h.iv}).length,others=feats.filter(function(f){return !f.hidden&&f.kind!=='house'}).length;
  var nums={};hs.forEach(function(h){if(h.no)nums[h.no]=(nums[h.no]||0)+1});var dup=Object.keys(nums).filter(function(k){return nums[k]>1}).length;
  var by={};feats.forEach(function(f){if(!f.hidden)by[f.by]=(by[f.by]||0)+1});var top=Object.keys(by).sort(function(a,b){return by[b]-by[a]}).slice(0,3).map(function(k){return esc(k)+' ('+by[k]+')'}).join(' · ');
  var pct=Math.min(100,hs.length/TOTAL*100);
- var h='<div class="tile" style="min-width:190px"><b>'+hs.length+' / '+TOTAL+'</b>บ้านที่ปักหมุดแล้ว ('+pct.toFixed(1)+'%)<div class="meter"><i style="width:'+pct+'%"></i></div><div class="muted">224 = ตามคู่มือ ยังไม่ยืนยัน</div></div>';
+ var h='<div class="tile" style="min-width:190px"><b>'+hs.length+' / '+TOTAL+'</b>บ้านที่ปักหมุดแล้ว ('+pct.toFixed(1)+'%)<div class="meter"><i style="width:'+pct+'%"></i></div><div class="muted">224 = ตามคู่มือ ยังไม่ยืนยัน · ไม่นับบ้านที่รื้อแล้ว</div></div>';
  h+=Object.keys(HS).map(function(k){return '<div class="tile"><b>'+c[k]+'</b><span class="dot" style="background:'+HS[k].c+'"></span>'+HS[k].t+'</div>'}).join('');
  h+='<div class="tile"><b>'+iv+'</b>ติ๊กสัมภาษณ์แล้ว</div><div class="tile"><b>'+others+'</b>สถานที่/จุดอื่น</div><div class="tile"><b'+(dup?' style="color:var(--bad)"':'')+'>'+dup+'</b>เลขที่ซ้ำ</div><div class="tile" style="min-width:200px"><b style="font-size:13px">ผู้ร่วมปักหมุด</b><span class="muted">'+(top||'—')+'</span></div>';
  if(svOn())h+='<div class="tile" id="svTile" style="min-width:150px"><b>…</b>แบบสอบถามจริง</div>';
@@ -943,10 +958,10 @@ function layersTab(){
  var kc=kinChips();
  h+='<h3>เครือญาติ (ไฮไลต์บ้านญาติกัน)</h3>'+(kc?'<div class="muted">กดเลือกกลุ่ม บ้านในกลุ่มจะเรืองสีเขียวนีออน ที่เหลือจางลง กดซ้ำเพื่อปิด · บ้านหนึ่งอยู่ได้หลายกลุ่ม</div><div class="mfchips">'+kc+'</div>':'<div class="muted">ยังไม่มีบ้านที่ใส่ตระกูล · เปิดบ้านแต่ละหลังแล้วกรอกช่อง “ตระกูล / กลุ่มเครือญาติ” หรือใส่ตระกูลตอนปักบ้านต่อเนื่อง</div>');
  h+='<h3>ญาติของคนหนึ่ง (ไฮไลต์บ้านญาติ)</h3>'+relHiBox();
- h+='<div class="muted" style="margin-top:6px">วงแหวนเขียวที่บ้าน = ติ๊กว่าสัมภาษณ์แล้ว · ลากหมุดเพื่อย้ายได้ ทุกคนปักและแก้ไขได้ มีประวัติและกู้คืนได้ · จุดที่ซ้อนกันจะรวมเป็นวงกลมตัวเลข กดเพื่อซูมแยก</div>';
- var nums={};feats.forEach(function(f){if(!f.hidden&&f.kind==='house'&&f.no){(nums[f.no]=nums[f.no]||[]).push(f)}});
+ h+='<div class="muted" style="margin-top:6px">วงแหวนเขียวที่บ้าน = ติ๊กว่าสัมภาษณ์แล้ว · หมุดล็อกไว้กันเผลอลาก ถ้าจะย้ายให้กดปุ่ม 🔒 บนแผนที่เพื่อเปิดโหมดแก้ไขตำแหน่งก่อน · ทุกคนปักและแก้ไขได้ มีประวัติและกู้คืนได้ · จุดที่ซ้อนกันจะรวมเป็นวงกลมตัวเลข กดเพื่อซูมแยก</div>';
+ var nums={};feats.forEach(function(f){if(!f.hidden&&f.kind==='house'&&f.status!=='demo'&&f.no){(nums[f.no]=nums[f.no]||[]).push(f)}});
  var dups=Object.keys(nums).filter(function(k){return nums[k].length>1});var nonum=feats.filter(function(f){return !f.hidden&&f.kind==='house'&&!f.no});
- h+='<h3>ต้องตรวจ</h3>'+((dups.length||nonum.length)?dups.map(function(k){return '<div class="item" style="cursor:pointer" data-fsel="'+nums[k][0].id+'">🔴 เลขที่ '+esc(k)+' ซ้ำ '+nums[k].length+' หมุด</div>'}).join('')+nonum.map(function(f){return '<div class="item" style="cursor:pointer" data-fsel="'+f.id+'">🟠 บ้านยังไม่มีเลขที่ ('+esc(HS[f.status].t)+') · '+esc(f.by)+'</div>'}).join(''):'<div class="muted">ไม่พบปัญหา</div>');
+ h+='<h3>ต้องตรวจ</h3>'+((dups.length||nonum.length)?dups.map(function(k){return '<div class="item" style="cursor:pointer" data-fsel="'+nums[k][0].id+'">🔴 เลขที่ '+esc(k)+' ซ้ำ '+nums[k].length+' หมุด</div>'}).join('')+nonum.map(function(f){return '<div class="item" style="cursor:pointer" data-fsel="'+f.id+'">🟠 บ้านยังไม่มีเลขที่ ('+esc(HSt(f))+') · '+esc(f.by)+'</div>'}).join(''):'<div class="muted">ไม่พบปัญหา</div>');
  var hid=feats.filter(function(f){return f.hidden});
  if(hid.length)h+='<h3>ซ่อนอยู่ ('+hid.length+')</h3>'+hid.map(function(f){return '<div class="item">'+esc(featLabel(f))+' <button data-fa="restore" data-id="'+f.id+'">กู้คืน</button>'+(st.role==='admin'?' <button class="danger" data-fa="purge" data-id="'+f.id+'" title="ลบออกจากเว็บและชีตถาวร (เฉพาะผู้ดูแล)">ลบถาวร</button>':'')+'</div>'}).join('');
  return h}
@@ -987,11 +1002,21 @@ function notesTab(){
  h+='<h3>ยังไม่มีตำแหน่ง ('+no.length+')</h3>'+no.slice(0,25).map(function(s){return '<div class="item">'+tagChips(s)+' '+esc(s.text.slice(0,70))+'…'+(canTag()?' <button data-pk="'+s.id+'">📍 ปัก</button>':'')+'</div>'}).join('');
  h+='<h3>มีตำแหน่งแล้ว ('+yes.length+')</h3>'+yes.map(function(s){return '<div class="item" style="cursor:pointer" data-fly="'+s.id+'">'+tagChips(s)+' '+esc(s.text.slice(0,70))+'…</div>'}).join('');
  return h}
-$('mapQ').addEventListener('input',function(){var qp=qparse(this.value);if(!qp.qn){$('mapQRes').innerHTML='';return}
+function mapSearchRun(val,box){var qp=qparse(val);if(!qp.qn){box.innerHTML='';return}
  var r=feats.map(function(f){return {f:f,sc:featScore(f,qp)}}).filter(function(x){return x.sc>0}).sort(function(a,b){return b.sc-a.sc});
  var hm=qp.isNo?'<div class="item" data-hm="'+esc(qp.hq)+'"><b>📇 เปิดข้อมูลบ้านเลขที่ '+esc(qp.hq)+'</b> <span class="muted">รวมทุกอย่างของบ้านนี้</span></div>':'';
- $('mapQRes').innerHTML=hm+(r.length?r.slice(0,8).map(function(x){return '<div class="item" data-fsel="'+x.f.id+'">'+featIcon(x.f)+'<b>'+esc(featLabel(x.f))+'</b> <span class="muted">'+esc(x.f.kind==='house'?HS[x.f.status].t:K_(x.f.kind).t)+'</span></div>'}).join('')+(r.length>8?'<div class="muted">…อีก '+(r.length-8)+' พิมพ์ให้เจาะจงขึ้น</div>':''):'<div class="muted" style="padding:6px 0">ไม่พบ “'+esc(this.value)+'” บนแผนที่</div>')});
+ box.innerHTML=hm+(r.length?r.slice(0,8).map(function(x){return '<div class="item" data-fsel="'+x.f.id+'">'+featIcon(x.f)+'<b>'+esc(featLabel(x.f))+'</b> <span class="muted">'+esc(x.f.kind==='house'?HS[x.f.status].t:K_(x.f.kind).t)+'</span></div>'}).join('')+(r.length>8?'<div class="muted">…อีก '+(r.length-8)+' พิมพ์ให้เจาะจงขึ้น</div>':''):'<div class="muted" style="padding:6px 0">ไม่พบ “'+esc(val)+'” บนแผนที่</div>')}
+$('mapQ').addEventListener('input',function(){mapSearchRun(this.value,$('mapQRes'))});
 $('mapQRes').addEventListener('click',function(e){var fs=e.target.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);if(ff)findFeat(ff)}});
+/* ช่องค้นหาลอยบนแผนที่ (เห็นตลอด รวมโหมดแผนที่อย่างเดียวและบนมือถือ) */
+$('mapQF').addEventListener('input',function(){mapSearchRun(this.value,$('mapQFRes'))});
+$('mapQF').addEventListener('keydown',function(e){if(e.key==='Escape'){$('mapQFRes').innerHTML='';this.blur();return}if(e.key==='Enter'){var it=$('mapQFRes').querySelector('[data-fsel]');if(it){var ff=featOf(it.dataset.fsel);if(ff){$('mapQFRes').innerHTML='';this.blur();findFeat(ff)}}}});
+$('mapQFRes').addEventListener('click',function(e){var fs=e.target.closest('[data-fsel]');if(fs){var ff=featOf(fs.dataset.fsel);$('mapQFRes').innerHTML='';$('mapQF').blur();if(ff)findFeat(ff);return}if(e.target.closest('[data-hm]')){$('mapQFRes').innerHTML=''}});
+/* โหมดแก้ไขตำแหน่งหมุด: ปกติล็อก (ลากไม่ได้ กันเผลอ) · เปิดแล้วลากได้ · ล็อกเองถ้าไม่ได้ย้ายนาน 10 นาที · ลากแล้วมีปุ่มเลิกทำ */
+function armEdit(){clearTimeout(st.editT);st.editT=null;if(st.edit)st.editT=setTimeout(function(){if(st.edit){setEdit(false);toast('ล็อกหมุดให้เองแล้ว (ไม่ได้ย้ายหมุดนาน 10 นาที)')}},600000)}
+function setEdit(on,quiet){on=!!on&&canTag()&&!st.full;if(st.edit===on)return;st.edit=on;clearTimeout(st.editT);armEdit();renderTools();drawMap();if(!quiet)toast(on?'เปิดโหมดแก้ไขตำแหน่ง: ลากหมุดเพื่อย้ายได้ (กดปุ่มสีส้มอีกครั้งเพื่อล็อก)':'ล็อกหมุดแล้ว ลากไม่ได้')}
+function renderTools(){var b=$('mtEdit');if(!b)return;var ok=canTag();b.style.display=ok?'':'none';b.className=st.edit?'on':'';b.textContent=st.edit?'✏️ แก้ไขตำแหน่ง · กดเพื่อล็อก':'🔒 หมุดล็อกอยู่';b.title=st.edit?'กดเพื่อล็อกหมุดอีกครั้ง':'กดเพื่อเปิดโหมดแก้ไขตำแหน่ง (จะลากหมุดได้)';$('map').classList.toggle('editing',!!st.edit&&ok&&!st.full)}
+$('mtEdit').addEventListener('click',function(){setEdit(!st.edit)});
 $('msBody').addEventListener('click',function(e){
  var t=e.target;
  var pp=t.closest('[data-pp]');if(pp)return openPerson(pp.dataset.pp);
@@ -1007,7 +1032,7 @@ $('msBody').addEventListener('click',function(e){
  if(a==='opencfg')return openCfg();
  if(a==='svchk'&&f){var bx=$('svBox');bx.textContent='กำลังตรวจ…';svHouse(f.no).then(function(r){if(!r.ok)throw new Error(r.error||'ไม่สำเร็จ');bx.innerHTML=r.sets.length?'<b>พบ '+r.sets.length+' ชุด</b>'+svRows(r.sets)+(f.iv?'<div class="muted">ติ๊กสัมภาษณ์แล้วอยู่แล้ว</div>':(canTag()?'<div class="bar"><button class="primary" data-fa="svtick">ติ๊ก “สัมภาษณ์แล้ว”</button></div>':'')):'<b>ยังไม่พบข้อมูลของบ้านเลขที่นี้ในแบบสอบถาม</b>'+(f.iv?'<div class="muted">แต่ติ๊กไว้ว่าสัมภาษณ์แล้ว ลองตรวจว่าพิมพ์เลขที่ตรงกันไหม</div>':'')}).catch(function(er){bx.textContent='ตรวจไม่ได้: '+er.message});return}
  if(a==='svtick'&&f){f.iv=true;f.hist.push('ติ๊กสัมภาษณ์แล้วจากข้อมูลแบบสอบถาม · '+me()+' · '+now());save();toast('ติ๊กแล้ว');drawMap();return mapSide()}
- if(a==='svall'){if(st.svrun)return;st.svrun=true;var hs=feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.no}),found=0,miss=0,sus=[],pg=$('svProg');
+ if(a==='svall'){if(st.svrun)return;st.svrun=true;var hs=feats.filter(function(x){return !x.hidden&&x.kind==='house'&&x.status!=='demo'&&x.no}),found=0,miss=0,sus=[],pg=$('svProg');
   (async function(){try{for(var i=0;i<hs.length;i++){var h1=hs[i];pg.textContent='ตรวจ '+(i+1)+'/'+hs.length+' (บ้านเลขที่ '+h1.no+')…';var r=await svHouse(h1.no);if(!r.ok)throw new Error(r.error||'ไม่สำเร็จ');
     if(r.sets.length){found++;if(!h1.iv){h1.iv=true;h1.hist.push('ติ๊กสัมภาษณ์แล้วจากข้อมูลแบบสอบถาม · '+me()+' · '+now())}}else{miss++;if(h1.iv)sus.push(h1.no)}
     await new Promise(function(res){setTimeout(res,150)})}
@@ -1071,7 +1096,7 @@ function suggest(s){
 // ---- ค้นหา ----
 function featScore(f,qp){if(f.hidden)return 0;var qn=qp.qn;
  if(f.kind==='house'){var no=nno(f.no);if(qp.isNo&&no){if(no===qp.hq)return 100;if(no.indexOf(qp.hq)===0)return 60;if(no.indexOf(qp.hq)>=0)return 30}
-  if(!qp.isNo&&tnorm(f.note+' '+HS[f.status].t+(f.iv?' สัมภาษณ์แล้ว':'')).indexOf(qn)>=0)return 20;return 0}
+  if(!qp.isNo&&tnorm(f.note+' '+HSt(f)+(f.iv?' สัมภาษณ์แล้ว':'')).indexOf(qn)>=0)return 20;return 0}
  if(tnorm(f.title).indexOf(qn)>=0)return 70;return tnorm(K_(f.kind).t+' '+f.note+' '+(f.who||'')+' '+kinsOf(f).join(' ')).indexOf(qn)>=0?25:0}
 function personHit(p,qp){if(p.hidden)return false;if(qp.isNo)return !!p.house&&nno(p.house)===qp.hq;return tnorm([p.name,p.alias,p.aka,p.note,p.house?'บ้าน '+p.house:''].join(' ')).indexOf(qp.qn)>=0}
 function snipSearch(s,qp){var n=noteOf(s),qn=qp.qn,sc=0,why=[],tx=tnorm(s.text);
@@ -1087,7 +1112,7 @@ function renderSearch(q){var qp=qparse(q);if(!qp.qn)return '';
  var S=snips.map(function(s){return snipSearch(s,qp)}).filter(Boolean).sort(function(a,b){return b.sc-a.sc});
  var h='';
  if(qp.isNo)h+='<div class="sr" data-hm="'+esc(q.replace(/^(บ้านเลขที่|บ้านเลข|เลขที่|หลังที่|บ้าน)\s*/,''))+'"><span class="ic">📇</span><div class="tt"><b>เปิดข้อมูลบ้านเลขที่ '+esc(qp.hq)+'</b><small>หมุด · คนในบ้าน · ญาติ · โน้ต · แบบสอบถาม รวมในหน้าเดียว</small></div></div>';
- if(F.length)h+='<h4>🏠 บ้านและจุดบนแผนที่ ('+F.length+')</h4>'+F.slice(0,6).map(function(x){var f=x.f;return '<div class="sr" data-sr="f|'+f.id+'"><span class="ic">'+featEm(f)+'</span><div class="tt"><b>'+esc(featLabel(f))+'</b><small>'+esc(f.kind==='house'?HS[f.status].t+(f.iv?' · สัมภาษณ์แล้ว':''):K_(f.kind).t)+(f.who?' · '+esc(f.who):'')+(f.note?' · '+esc(f.note):'')+'</small></div></div>'}).join('')+(F.length>6?'<div class="muted" style="padding:0 10px 4px">…อีก '+(F.length-6)+' รายการ พิมพ์ให้เจาะจงขึ้น</div>':'');
+ if(F.length)h+='<h4>🏠 บ้านและจุดบนแผนที่ ('+F.length+')</h4>'+F.slice(0,6).map(function(x){var f=x.f;return '<div class="sr" data-sr="f|'+f.id+'"><span class="ic">'+featEm(f)+'</span><div class="tt"><b>'+esc(featLabel(f))+'</b><small>'+esc(f.kind==='house'?HSt(f)+(f.iv?' · สัมภาษณ์แล้ว':''):K_(f.kind).t)+(f.who?' · '+esc(f.who):'')+(f.note?' · '+esc(f.note):'')+'</small></div></div>'}).join('')+(F.length>6?'<div class="muted" style="padding:0 10px 4px">…อีก '+(F.length-6)+' รายการ พิมพ์ให้เจาะจงขึ้น</div>':'');
  if(P.length)h+='<h4>👥 บุคคล ('+P.length+')</h4>'+P.slice(0,5).map(function(p){var cnt=snips.filter(function(s){return (s.pids||[]).indexOf(p.id)>=0}).length;return '<div class="sr" data-sr="p|'+p.id+'"><span class="ic">👤</span><div class="tt"><b>'+esc(p.name)+(p.alias?' <span class="muted">('+esc(p.alias)+')</span>':'')+'</b><small>'+(p.house?'บ้านเลขที่ '+esc(p.house)+' · ':'')+cnt+' ข้อความที่ผูกไว้'+(p.note?' · '+esc(p.note):'')+'</small></div></div>'}).join('');
  if(S.length)h+='<h4>📝 ข้อความ ('+S.length+')</h4>'+S.slice(0,6).map(function(x){var s=x.s;return '<div class="sr" data-sr="s|'+s.id+'"><span class="ic">📝</span><div class="tt"><b style="font-weight:500;white-space:normal">'+excerpt(s.text,qp)+'</b><small>'+(x.why.length?'ผูกกับ '+x.why.map(esc).join(', ')+' · ':'')+esc(noteOf(s).by)+(s.wi.length?' · วิถี '+s.wi.join(','):' · ยังไม่ระบุวิถี')+'</small></div></div>'}).join('')+'<button class="more" data-sr="all|">ดูทั้ง '+S.length+' ข้อความในคลังกลาง</button>';
  if(!h)h='<div class="empty" style="margin:6px;padding:18px"><span class="em">🔎</span>ไม่พบ “'+esc(q)+'”</div>';
